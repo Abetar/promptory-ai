@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import type { PromptType } from "@prisma/client";
+type PromptType = "texto" | "imagen" | "video";
 
 type ActionState =
   | { ok: true; message?: string }
