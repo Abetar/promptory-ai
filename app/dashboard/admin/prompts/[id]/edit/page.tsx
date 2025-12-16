@@ -4,13 +4,47 @@ import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import PromptForm from "../../PromptForm";
 import { updatePromptAction } from "../../actions";
+import type { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
 
+/* ----------------------------------------
+   Tipos
+---------------------------------------- */
 type ActionState =
   | { ok: true; message?: string }
   | { ok: false; message: string };
 
+// Tipado REAL del prompt (evita `any` en build)
+async function getPromptForEdit(id: string) {
+  return prisma.prompt.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      type: true,
+      isFree: true,
+      priceMx: true,
+      contentPreview: true,
+      contentFull: true,
+      isPublished: true,
+      aiTools: {
+        select: {
+          aiTool: {
+            select: { slug: true },
+          },
+        },
+      },
+    },
+  });
+}
+
+type PromptForEdit = Prisma.PromiseReturnType<typeof getPromptForEdit>;
+
+/* ----------------------------------------
+   Page
+---------------------------------------- */
 export default async function EditPromptPage({
   params,
 }: {
@@ -25,21 +59,7 @@ export default async function EditPromptPage({
       orderBy: { name: "asc" },
       select: { slug: true, name: true },
     }),
-    prisma.prompt.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        type: true,
-        isFree: true,
-        priceMx: true,
-        contentPreview: true,
-        contentFull: true,
-        isPublished: true,
-        aiTools: { select: { aiTool: { select: { slug: true } } } },
-      },
-    }),
+    getPromptForEdit(id),
   ]);
 
   if (!prompt) return notFound();
@@ -51,6 +71,7 @@ export default async function EditPromptPage({
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
@@ -76,11 +97,13 @@ export default async function EditPromptPage({
         </div>
       </div>
 
+      {/* Form */}
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5">
         <PromptForm
           action={action}
           aiTools={aiTools}
           submitLabel="Guardar cambios"
+          redirectTo="/dashboard/admin/prompts"
           defaultValues={{
             title: prompt.title,
             description: prompt.description,

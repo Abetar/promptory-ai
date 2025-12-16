@@ -1,6 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+
+// ✅ No dependas de Prisma aquí (evita broncas en Vercel)
 type PromptType = "texto" | "imagen" | "video";
 
 type ActionState =
@@ -36,9 +39,12 @@ export default function PromptForm({
   aiTools,
   defaultValues,
   submitLabel,
+  redirectTo, // ✅ nuevo
 }: {
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
   aiTools: AiTool[];
+  submitLabel: string;
+  redirectTo?: string; // ✅ nuevo
   defaultValues?: {
     title?: string;
     description?: string;
@@ -50,8 +56,9 @@ export default function PromptForm({
     isPublished?: boolean;
     aiSlugs?: string[];
   };
-  submitLabel: string;
 }) {
+  const router = useRouter();
+
   const dv = defaultValues ?? {};
   const selected = new Set(dv.aiSlugs ?? []);
 
@@ -60,12 +67,16 @@ export default function PromptForm({
     { ok: true, message: "" }
   );
 
+  // ✅ Redirige cuando todo salió OK
+  useEffect(() => {
+    if (state.ok && redirectTo) {
+      router.push(redirectTo);
+    }
+  }, [state.ok, redirectTo, router]);
+
   return (
     <form action={formAction} className="space-y-6">
-      {/* Banner bonito */}
-      {state.ok === false ? (
-        <Alert variant="error" message={state.message} />
-      ) : null}
+      {state.ok === false ? <Alert variant="error" message={state.message} /> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
@@ -83,7 +94,7 @@ export default function PromptForm({
           <label className="text-sm text-neutral-300">Tipo</label>
           <select
             name="type"
-            defaultValue={(dv.type ?? "texto") as any}
+            defaultValue={(dv.type ?? "texto") as PromptType}
             className="h-11 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 outline-none"
           >
             <option value="texto">texto</option>
@@ -124,9 +135,6 @@ export default function PromptForm({
             />
             <span className="text-sm text-neutral-500">MXN</span>
           </div>
-          <p className="text-xs text-neutral-500">
-            Si marcas “Gratis”, el precio se guarda como 0.
-          </p>
         </div>
 
         <div className="space-y-2">
@@ -137,7 +145,7 @@ export default function PromptForm({
               name="isPublished"
               defaultChecked={dv.isPublished ?? true}
             />
-            Publicado (visible en catálogo)
+            Publicado
           </label>
         </div>
       </div>
@@ -164,9 +172,7 @@ export default function PromptForm({
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
-          <label className="text-sm text-neutral-300">
-            Preview (para premium)
-          </label>
+          <label className="text-sm text-neutral-300">Preview</label>
           <textarea
             name="contentPreview"
             defaultValue={dv.contentPreview ?? ""}
@@ -176,9 +182,7 @@ export default function PromptForm({
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm text-neutral-300">
-            Full (contenido completo)
-          </label>
+          <label className="text-sm text-neutral-300">Full</label>
           <textarea
             name="contentFull"
             defaultValue={dv.contentFull ?? ""}
