@@ -4,47 +4,26 @@ import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
 import PromptForm from "../../PromptForm";
 import { updatePromptAction } from "../../actions";
-import type { Prisma } from "@prisma/client";
 
 export const runtime = "nodejs";
 
-/* ----------------------------------------
-   Tipos
----------------------------------------- */
 type ActionState =
   | { ok: true; message?: string }
   | { ok: false; message: string };
 
-// Tipado REAL del prompt (evita `any` en build)
-async function getPromptForEdit(id: string) {
-  return prisma.prompt.findUnique({
-    where: { id },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      type: true,
-      isFree: true,
-      priceMx: true,
-      contentPreview: true,
-      contentFull: true,
-      isPublished: true,
-      aiTools: {
-        select: {
-          aiTool: {
-            select: { slug: true },
-          },
-        },
-      },
-    },
-  });
-}
+type PromptForEdit = {
+  id: string;
+  title: string;
+  description: string;
+  type: "texto" | "imagen" | "video";
+  isFree: boolean;
+  priceMx: number;
+  contentPreview: string;
+  contentFull: string;
+  isPublished: boolean;
+  aiTools: { aiTool: { slug: string } }[];
+};
 
-type PromptForEdit = Prisma.PromiseReturnType<typeof getPromptForEdit>;
-
-/* ----------------------------------------
-   Page
----------------------------------------- */
 export default async function EditPromptPage({
   params,
 }: {
@@ -59,10 +38,27 @@ export default async function EditPromptPage({
       orderBy: { name: "asc" },
       select: { slug: true, name: true },
     }),
-    getPromptForEdit(id),
+    prisma.prompt.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        type: true,
+        isFree: true,
+        priceMx: true,
+        contentPreview: true,
+        contentFull: true,
+        isPublished: true,
+        aiTools: { select: { aiTool: { select: { slug: true } } } },
+      },
+    }),
   ]);
 
   if (!prompt) return notFound();
+
+  // ✅ “casts” seguros para evitar any + mantener build feliz
+  const safePrompt = prompt as unknown as PromptForEdit;
 
   const action = async (prevState: ActionState, formData: FormData) => {
     "use server";
@@ -71,13 +67,10 @@ export default async function EditPromptPage({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Editar prompt
-          </h1>
-          <p className="mt-1 text-sm text-neutral-400">{prompt.title}</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Editar prompt</h1>
+          <p className="mt-1 text-sm text-neutral-400">{safePrompt.title}</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -89,7 +82,7 @@ export default async function EditPromptPage({
           </Link>
 
           <Link
-            href={`/dashboard/prompts/${prompt.id}`}
+            href={`/dashboard/prompts/${safePrompt.id}`}
             className="rounded-xl border border-neutral-800 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900 transition"
           >
             Ver en catálogo
@@ -97,7 +90,6 @@ export default async function EditPromptPage({
         </div>
       </div>
 
-      {/* Form */}
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5">
         <PromptForm
           action={action}
@@ -105,15 +97,15 @@ export default async function EditPromptPage({
           submitLabel="Guardar cambios"
           redirectTo="/dashboard/admin/prompts"
           defaultValues={{
-            title: prompt.title,
-            description: prompt.description,
-            type: prompt.type,
-            isFree: prompt.isFree,
-            priceMx: prompt.priceMx,
-            contentPreview: prompt.contentPreview,
-            contentFull: prompt.contentFull,
-            isPublished: prompt.isPublished,
-            aiSlugs: prompt.aiTools.map((x) => x.aiTool.slug),
+            title: safePrompt.title,
+            description: safePrompt.description,
+            type: safePrompt.type,
+            isFree: safePrompt.isFree,
+            priceMx: safePrompt.priceMx,
+            contentPreview: safePrompt.contentPreview,
+            contentFull: safePrompt.contentFull,
+            isPublished: safePrompt.isPublished,
+            aiSlugs: safePrompt.aiTools.map((x) => x.aiTool.slug),
           }}
         />
       </div>
