@@ -93,7 +93,7 @@ export default async function AdminPromptsListPage() {
                 )}
               </div>
 
-              <div className="col-span-2 flex items-center justify-end gap-2">
+              <div className="col-span-12 md:col-span-2 flex flex-wrap md:flex-nowrap items-center justify-start md:justify-end gap-2 mt-3 md:mt-0">
                 <Link
                   href={`/dashboard/admin/prompts/${p.id}/edit`}
                   className="rounded-xl border border-neutral-800 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900 transition"
