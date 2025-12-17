@@ -54,7 +54,7 @@ export default async function DashboardPage() {
       </section>
 
       {/* Sección de estado / roadmap */}
-      <section className="rounded-2xl border border-neutral-800 bg-neutral-900/20 p-5">
+      {/* <section className="rounded-2xl border border-neutral-800 bg-neutral-900/20 p-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <div className="text-sm font-semibold text-neutral-100">
@@ -72,7 +72,7 @@ export default async function DashboardPage() {
             Ver catálogo
           </Link>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }
