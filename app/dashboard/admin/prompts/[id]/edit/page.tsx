@@ -105,7 +105,7 @@ export default async function EditPromptPage({
             contentPreview: safePrompt.contentPreview,
             contentFull: safePrompt.contentFull,
             isPublished: safePrompt.isPublished,
-            aiSlugs: safePrompt.aiTools.map((x) => x.aiTool.slug),
+            aiSlugs: safePrompt.aiTools.map((x) => x.aiTool.slug), 
           }}
         />
       </div>
