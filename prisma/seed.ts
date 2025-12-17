@@ -1,154 +1,105 @@
+// prisma/seed.ts
 import { PrismaClient, PromptType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-type SeedPrompt = {
-  title: string;
-  description: string;
-  type: PromptType;
-  isFree: boolean;
-  priceMx: number;
-  contentPreview: string;
-  contentFull: string;
-  isPublished: boolean;
-  aiSlugs: string[];
-};
-
-async function upsertAiTools(): Promise<Map<string, string>> {
-  const tools = [
+async function main() {
+  // 1) AI Tools base
+  const aiTools = [
     { slug: "chatgpt", name: "ChatGPT" },
     { slug: "claude", name: "Claude" },
     { slug: "gemini", name: "Gemini" },
-    { slug: "deepseek", name: "DeepSeek" },
     { slug: "midjourney", name: "Midjourney" },
-    { slug: "dalle", name: "DALL·E" },
-    { slug: "stable-diffusion", name: "Stable Diffusion" },
-    { slug: "runway", name: "Runway" },
+    { slug: "sora", name: "Sora" },
   ];
 
-  for (const t of tools) {
-    await prisma.aiTool.upsert({
-      where: { slug: t.slug },
-      update: { name: t.name, isActive: true },
-      create: { slug: t.slug, name: t.name, isActive: true },
-    });
-  }
+  await prisma.aiTool.createMany({
+    data: aiTools.map((t) => ({ ...t, isActive: true })),
+    skipDuplicates: true,
+  });
 
-  const all = await prisma.aiTool.findMany({
-    where: { isActive: true },
+  const tools = await prisma.aiTool.findMany({
+    where: { slug: { in: aiTools.map((t) => t.slug) } },
     select: { id: true, slug: true },
   });
 
-  return new Map(all.map((x) => [x.slug, x.id]));
-}
+  const toolId = new Map(tools.map((t) => [t.slug, t.id]));
 
-async function upsertPromptAndRelations(p: SeedPrompt, aiMap: Map<string, string>) {
-  // ✅ upsert por title (requiere Prompt.title @unique)
-  const prompt = await prisma.prompt.upsert({
-    where: { title: p.title },
-    update: {
-      description: p.description,
-      type: p.type,
-      isFree: p.isFree,
-      priceMx: p.priceMx,
-      contentPreview: p.contentPreview,
-      contentFull: p.contentFull,
-      isPublished: p.isPublished,
-    },
-    create: {
-      title: p.title,
-      description: p.description,
-      type: p.type,
-      isFree: p.isFree,
-      priceMx: p.priceMx,
-      contentPreview: p.contentPreview,
-      contentFull: p.contentFull,
-      isPublished: p.isPublished,
-    },
-  });
-
-  // Sync relaciones
-  await prisma.promptAiTool.deleteMany({ where: { promptId: prompt.id } });
-
-  const aiToolIds = p.aiSlugs
-    .map((slug) => aiMap.get(slug))
-    .filter((id): id is string => typeof id === "string");
-
-  if (aiToolIds.length) {
-    await prisma.promptAiTool.createMany({
-      data: aiToolIds.map((aiToolId) => ({
-        promptId: prompt.id,
-        aiToolId,
-      })),
-      skipDuplicates: true,
-    });
-  }
-
-  return prompt.id;
-}
-
-async function main() {
-  console.log("🌱 Seed: AiTools + Prompts + relations");
-
-  const aiMap = await upsertAiTools();
-
-  const prompts: SeedPrompt[] = [
+  // 2) Prompts base
+  const prompts = [
     {
       title: "Resumen ejecutivo de reunión",
-      description: "Convierte notas en un resumen claro con acciones, riesgos y pendientes.",
+      description: "Convierte notas en un resumen claro con acciones y pendientes.",
       type: PromptType.texto,
       isFree: true,
       priceMx: 0,
-      contentPreview:
-        "Eres un asistente que resume reuniones. Entrega: resumen, acuerdos, pendientes, responsables y fechas...",
+      contentPreview: "Crea un resumen con: decisiones, tareas, responsables y fechas.",
       contentFull:
-        `Eres un asistente experto en productividad. A partir de las notas/transcripción, genera:
-1) Resumen (máx 8 bullets)
-2) Acuerdos
-3) Pendientes (tabla: tarea, responsable, fecha)
-4) Riesgos/alertas
-5) Próximos pasos
-
-Notas:
-{{NOTAS_AQUI}}`,
+        "Eres un asistente experto. Toma estas notas y devuelve:\n1) Resumen ejecutivo\n2) Decisiones\n3) Acciones (owner + fecha)\n4) Riesgos\n5) Pendientes\nNotas:\n{{NOTAS}}",
       isPublished: true,
-      aiSlugs: ["chatgpt", "claude", "gemini", "deepseek"],
+      aiSlugs: ["chatgpt", "claude", "gemini"],
     },
     {
       title: "Prompt para imagen estilo product shot",
-      description: "Crea un prompt detallado para render tipo e-commerce.",
+      description: "Genera un prompt para render e-commerce.",
       type: PromptType.imagen,
       isFree: false,
       priceMx: 20,
-      contentPreview:
-        "Product shot en estudio: luz suave, fondo neutro, 85mm, ultra detallado...",
+      contentPreview: "Describe producto, fondo, iluminación, lente y estilo.",
       contentFull:
-        `Actúa como director creativo. Crea un prompt para IA de imagen con:
-- sujeto (producto) + materiales
-- fondo (color/gradiente)
-- iluminación (key/fill/rim)
-- lente/cámara (85mm, f/2.8, ISO)
-- composición (centrado / thirds)
-- calidad (ultra detailed, 8k)
-
-Producto:
-{{PRODUCTO_AQUI}}`,
+        "Genera un prompt para imagen e-commerce hiperrealista con:\n- Producto: {{PRODUCTO}}\n- Materiales: {{MATERIALES}}\n- Fondo: {{FONDO}}\n- Iluminación: softbox\n- Lente: 85mm\n- Calidad: ultra\nDevuelve 3 variantes.",
       isPublished: true,
-      aiSlugs: ["midjourney", "dalle", "stable-diffusion"],
+      aiSlugs: ["midjourney", "sora"],
     },
   ];
 
   for (const p of prompts) {
-    const id = await upsertPromptAndRelations(p, aiMap);
-    console.log(`✅ ${p.title} -> ${id}`);
+    const created = await prisma.prompt.upsert({
+      where: { title: p.title },
+      update: {
+        description: p.description,
+        type: p.type,
+        isFree: p.isFree,
+        priceMx: p.priceMx,
+        contentPreview: p.contentPreview,
+        contentFull: p.contentFull,
+        isPublished: p.isPublished,
+        aiTools: {
+          deleteMany: {},
+          create: p.aiSlugs
+            .map((slug) => toolId.get(slug))
+            .filter(Boolean)
+            .map((aiToolId) => ({ aiToolId: aiToolId as string })),
+        },
+      },
+      create: {
+        title: p.title,
+        description: p.description,
+        type: p.type,
+        isFree: p.isFree,
+        priceMx: p.priceMx,
+        contentPreview: p.contentPreview,
+        contentFull: p.contentFull,
+        isPublished: p.isPublished,
+        aiTools: {
+          create: p.aiSlugs
+            .map((slug) => toolId.get(slug))
+            .filter(Boolean)
+            .map((aiToolId) => ({ aiToolId: aiToolId as string })),
+        },
+      },
+      select: { id: true },
+    });
+
+    console.log("✅ prompt:", p.title, created.id);
   }
 
-  console.log("🎉 Seed completado");
+  console.log("✅ Seed terminado");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed error:", e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

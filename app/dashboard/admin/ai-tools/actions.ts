@@ -8,16 +8,22 @@ export type ActionState =
   | { ok: true; message?: string }
   | { ok: false; message: string };
 
-function getString(fd: FormData, key: string) {
-  return String(fd.get(key) ?? "").trim();
+function cleanSlug(input: string) {
+  return input
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[^a-z0-9-]/g, "")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
 }
 
 function friendlyError(e: unknown) {
   const msg = String((e as any)?.message || e);
   if (msg.includes("Unique constraint") || msg.includes("P2002")) {
-    return "Ese slug ya existe. Usa otro (ej. 'sora', 'nano-banana').";
+    return "Ese slug ya existe. Usa otro (ej: sora-2).";
   }
-  return "No se pudo guardar. Revisa e intenta de nuevo.";
+  return "No se pudo guardar la AI. Revisa los campos e intenta de nuevo.";
 }
 
 export async function createAiToolAction(
@@ -27,28 +33,22 @@ export async function createAiToolAction(
   try {
     await requireAdmin();
 
-    const name = getString(formData, "name");
-    const slug = getString(formData, "slug").toLowerCase();
+    const name = String(formData.get("name") ?? "").trim();
+    const slugRaw = String(formData.get("slug") ?? "").trim();
 
     if (!name) return { ok: false, message: "El nombre es obligatorio." };
-    if (!slug) return { ok: false, message: "El slug es obligatorio." };
-    if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-      return {
-        ok: false,
-        message:
-          "Slug inválido. Usa minúsculas, números y guiones (ej. 'nano-banana').",
-      };
-    }
+    if (!slugRaw) return { ok: false, message: "El slug es obligatorio." };
+
+    const slug = cleanSlug(slugRaw);
+    if (!slug) return { ok: false, message: "Slug inválido." };
 
     await prisma.aiTool.create({
       data: { name, slug, isActive: true },
     });
 
     revalidatePath("/dashboard/admin/ai-tools");
-    revalidatePath("/dashboard/prompts");
-    revalidatePath("/dashboard/admin/prompts");
-
-    return { ok: true, message: "AI agregada." };
+    revalidatePath("/dashboard/prompts"); // filtros
+    return { ok: true, message: "AI agregada ✅" };
   } catch (e) {
     return { ok: false, message: friendlyError(e) };
   }
@@ -69,17 +69,13 @@ export async function toggleAiToolActiveAction(id: string) {
 
   revalidatePath("/dashboard/admin/ai-tools");
   revalidatePath("/dashboard/prompts");
-  revalidatePath("/dashboard/admin/prompts");
 }
 
 export async function deleteAiToolAction(id: string) {
   await requireAdmin();
 
-  // OJO: si hay prompts ligados, por tu schema se borrará la relación (PromptAiTool)
-  // pero si te falla por constraints, lo ajustamos.
   await prisma.aiTool.delete({ where: { id } });
 
   revalidatePath("/dashboard/admin/ai-tools");
   revalidatePath("/dashboard/prompts");
-  revalidatePath("/dashboard/admin/prompts");
 }

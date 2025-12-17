@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
-import { createAiToolAction, toggleAiToolActiveAction, deleteAiToolAction } from "./actions";
+import AiToolForm from "./AiToolForm";
+import { toggleAiToolActiveAction, deleteAiToolAction } from "./actions";
 
 export const runtime = "nodejs";
 
@@ -21,42 +22,10 @@ export default async function AdminAiToolsPage() {
         </p>
       </div>
 
-      {/* Form nuevo */}
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5">
-        <form action={createAiToolAction as any} className="grid gap-4 md:grid-cols-3">
-          <div className="space-y-2">
-            <label className="text-sm text-neutral-300">Nombre</label>
-            <input
-              name="name"
-              placeholder="Sora"
-              className="h-11 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 outline-none"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm text-neutral-300">Slug</label>
-            <input
-              name="slug"
-              placeholder="sora"
-              className="h-11 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 outline-none"
-              required
-            />
-            <p className="text-xs text-neutral-500">minúsculas + guiones. ej: nano-banana</p>
-          </div>
-
-          <div className="flex items-end">
-            <button
-              type="submit"
-              className="h-11 w-full rounded-xl bg-neutral-100 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
-            >
-              + Agregar AI
-            </button>
-          </div>
-        </form>
+        <AiToolForm />
       </div>
 
-      {/* Lista */}
       <div className="rounded-2xl border border-neutral-800 overflow-hidden">
         <div className="grid grid-cols-12 bg-neutral-950 px-4 py-3 text-xs text-neutral-400">
           <div className="col-span-5">Nombre</div>
@@ -67,10 +36,7 @@ export default async function AdminAiToolsPage() {
 
         <div className="divide-y divide-neutral-800">
           {aiTools.map((t) => (
-            <div
-              key={t.id}
-              className="grid grid-cols-12 items-center px-4 py-3 bg-neutral-900/30"
-            >
+            <div key={t.id} className="grid grid-cols-12 items-center px-4 py-3 bg-neutral-900/30">
               <div className="col-span-5">
                 <div className="text-sm font-semibold text-neutral-100">{t.name}</div>
               </div>
