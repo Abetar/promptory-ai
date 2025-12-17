@@ -55,7 +55,7 @@ export default async function AdminAiToolsPage() {
                 )}
               </div>
 
-              <div className="col-span-2 flex justify-end gap-2">
+              <div className="col-span-12 md:col-span-2 flex flex-wrap md:flex-nowrap items-center justify-start md:justify-end gap-2 mt-3 md:mt-0">
                 <form action={async () => { "use server"; await toggleAiToolActiveAction(t.id); }}>
                   <button
                     type="submit"
