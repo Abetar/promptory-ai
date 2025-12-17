@@ -31,7 +31,7 @@ export default function PrivacyPage() {
           </Section>
 
           <Section title="5. Derechos ARCO / Contacto">
-            Puedes solicitar acceso, rectificación o eliminación escribiendo a soporte@promptory.ai
+            Puedes solicitar acceso, rectificación o eliminación escribiendo a agsolutions96@gmail.com
           </Section>
 
           <Section title="6. Cambios al aviso">

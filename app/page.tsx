@@ -151,10 +151,10 @@ export default function LandingPage() {
               title="Vista previa + Full"
               desc="Preview para decidir; full prompt para ejecutar."
             />
-            <FeatureCard
+            {/* <FeatureCard
               title="Modelo comercial"
               desc="Gratis, compra por prompt y paquetes. Suscripciones después."
-            />
+            /> */}
           </div>
         </div>
       </section>
