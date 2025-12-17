@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // ✅ No dependas de Prisma aquí (evita broncas en Vercel)
@@ -39,12 +39,12 @@ export default function PromptForm({
   aiTools,
   defaultValues,
   submitLabel,
-  redirectTo, // ✅ nuevo
+  redirectTo,
 }: {
   action: (prevState: ActionState, formData: FormData) => Promise<ActionState>;
   aiTools: AiTool[];
   submitLabel: string;
-  redirectTo?: string; // ✅ nuevo
+  redirectTo?: string;
   defaultValues?: {
     title?: string;
     description?: string;
@@ -62,21 +62,29 @@ export default function PromptForm({
   const dv = defaultValues ?? {};
   const selected = new Set(dv.aiSlugs ?? []);
 
+  // ✅ Evita redirect al cargar (solo después de submit)
+  const [didSubmit, setDidSubmit] = useState(false);
+
   const [state, formAction, isPending] = useActionState<ActionState, FormData>(
     action,
     { ok: true, message: "" }
   );
 
-  // ✅ Redirige cuando todo salió OK
   useEffect(() => {
-    if (state.ok && redirectTo) {
+    if (didSubmit && state.ok && redirectTo) {
       router.push(redirectTo);
     }
-  }, [state.ok, redirectTo, router]);
+  }, [didSubmit, state.ok, redirectTo, router]);
 
   return (
-    <form action={formAction} className="space-y-6">
-      {state.ok === false ? <Alert variant="error" message={state.message} /> : null}
+    <form
+      action={formAction}
+      onSubmit={() => setDidSubmit(true)}
+      className="space-y-6"
+    >
+      {state.ok === false ? (
+        <Alert variant="error" message={state.message} />
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">

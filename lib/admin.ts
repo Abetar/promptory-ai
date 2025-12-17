@@ -1,22 +1,20 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { redirect } from "next/navigation";
-
-function parseAdminEmails() {
-  const raw = process.env.ADMIN_EMAILS || "";
-  return raw
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
 
 export async function requireAdmin() {
   const session = await getServerSession(authOptions);
-  if (!session) redirect("/login");
 
-  const email = (session.user?.email || "").toLowerCase();
-  const admins = parseAdminEmails();
-  if (!admins.includes(email)) redirect("/dashboard");
+  if (!session?.user?.email) {
+    throw new Error("Unauthorized");
+  }
 
-  return { session, email };
+  const admins =
+    process.env.ADMIN_EMAILS?.split(",").map((e) => e.trim().toLowerCase()) ??
+    [];
+
+  if (!admins.includes(session.user.email.toLowerCase())) {
+    throw new Error("Forbidden");
+  }
+
+  return true;
 }
