@@ -25,7 +25,6 @@ export default function DonateFloatingButton() {
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     } catch {
-      // fallback (por si clipboard no está permitido)
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1800);
     }
@@ -33,21 +32,39 @@ export default function DonateFloatingButton() {
 
   return (
     <>
-      {/* Floating button */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-[60] inline-flex items-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-950/90 px-4 py-3 text-sm font-semibold text-neutral-100 shadow-lg backdrop-blur hover:bg-neutral-900 transition"
-        aria-label="Apoyar Promptory AI"
-      >
-        <span className="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-neutral-100 text-neutral-950">
-          {/* heart icon */}
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
-            <path d="M12 21s-7-4.6-9.3-8.5C.6 9 .9 5.8 3.6 4.2 5.6 3 8.1 3.5 9.7 5c.9.9 1.5 2 2.3 3 .8-1 1.4-2.1 2.3-3 1.6-1.5 4.1-2 6.1-.8 2.7 1.6 3 4.8.9 8.3C19 16.4 12 21 12 21z" />
-          </svg>
-        </span>
-        <span>Apoyar</span>
-      </button>
+      {/* Floating buttons stack */}
+      <div className="fixed bottom-5 right-5 z-[60] flex flex-col gap-3">
+        {/* ✅ NUEVO: Soporte (arriba) */}
+        <Link
+          href="/dashboard/soporte"
+          className="inline-flex items-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-950/90 px-4 py-3 text-sm font-semibold text-neutral-100 shadow-lg backdrop-blur hover:bg-neutral-900 transition"
+          aria-label="Solicitar soporte"
+        >
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 text-neutral-200">
+            {/* help icon */}
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+              <path d="M12 2a10 10 0 1 0 .001 20.001A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 .001-16.001A8 8 0 0 1 12 20zm0-4a1.25 1.25 0 1 0 0 2.5A1.25 1.25 0 0 0 12 16zm2.2-8.1c0 1.4-1 2-1.7 2.4-.6.3-.8.6-.8 1.2v.5h-1.7v-.7c0-1.3.7-2 1.5-2.4.7-.4 1.2-.7 1.2-1.4 0-.8-.7-1.3-1.6-1.3-.9 0-1.6.4-2 .9l-1.1-1.1c.7-.8 1.8-1.4 3.2-1.4 1.9 0 3 1.1 3 2.4z" />
+            </svg>
+          </span>
+          <span>Soporte</span>
+        </Link>
+
+        {/* Existing: Apoyar (abajo) */}
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="inline-flex items-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-950/90 px-4 py-3 text-sm font-semibold text-neutral-100 shadow-lg backdrop-blur hover:bg-neutral-900 transition"
+          aria-label="Apoyar Promptory AI"
+        >
+          <span className="inline-flex h-6 w-6 items-center justify-center rounded-xl bg-neutral-100 text-neutral-950">
+            {/* heart icon */}
+            <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+              <path d="M12 21s-7-4.6-9.3-8.5C.6 9 .9 5.8 3.6 4.2 5.6 3 8.1 3.5 9.7 5c.9.9 1.5 2 2.3 3 .8-1 1.4-2.1 2.3-3 1.6-1.5 4.1-2 6.1-.8 2.7 1.6 3 4.8.9 8.3C19 16.4 12 21 12 21z" />
+            </svg>
+          </span>
+          <span>Apoyar</span>
+        </button>
+      </div>
 
       {/* Modal */}
       {open ? (
