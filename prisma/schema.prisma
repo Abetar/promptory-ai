@@ -22,6 +22,9 @@ model User {
 
   packs UserPack[]
 
+  // ✅ Accesos directos a prompts (entitlements)
+  promptAccesses UserPromptAccess[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -118,6 +121,9 @@ model Prompt {
   saves PromptSave[]
 
   packs PackPrompt[]
+
+  // ✅ Accesos directos por usuario
+  accessUsers UserPromptAccess[]
 }
 
 /**
@@ -138,27 +144,27 @@ model PromptSave {
 }
 
 model Pack {
-  id          String   @id @default(cuid())
-  slug        String   @unique
+  id          String  @id @default(cuid())
+  slug        String  @unique
   title       String
   description String
-  isFree      Boolean  @default(false)
-  priceMx     Int      @default(0)
-  isPublished Boolean  @default(true)
+  isFree      Boolean @default(false)
+  priceMx     Int     @default(0)
+  isPublished Boolean @default(true)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  prompts     PackPrompt[]
-  users       UserPack[]
+  prompts PackPrompt[]
+  users   UserPack[]
 }
 
 model PackPrompt {
   packId   String
   promptId String
 
-  pack     Pack   @relation(fields: [packId], references: [id], onDelete: Cascade)
-  prompt   Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  pack   Pack   @relation(fields: [packId], references: [id], onDelete: Cascade)
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
 
   @@id([packId, promptId])
   @@index([promptId])
@@ -169,8 +175,8 @@ model UserPack {
   userId String
   packId String
 
-  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  pack   Pack @relation(fields: [packId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pack Pack @relation(fields: [packId], references: [id], onDelete: Cascade)
 
   createdAt DateTime @default(now())
 
@@ -180,12 +186,37 @@ model UserPack {
 }
 
 model PromptRequest {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   userEmail   String
   title       String
   description String
   aiTool      String?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime  @default(now())
   resolvedAt  DateTime?
 }
 
+enum AccessSource {
+  manual
+  promo
+  payment
+  support
+  temp
+}
+
+model UserPromptAccess {
+  userId   String
+  promptId String
+
+  source    AccessSource @default(manual)
+  expiresAt DateTime? // null = permanente
+
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@id([userId, promptId])
+  @@index([userId])
+  @@index([promptId])
+  @@index([expiresAt])
+}
