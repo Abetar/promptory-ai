@@ -10,20 +10,19 @@ export default async function SoportePage() {
 
   const email = session?.user?.email || "";
   const name =
-    session?.user?.name?.trim() ||
-    (email ? email.split("@")[0] : "usuario");
+    session?.user?.name?.trim() || (email ? email.split("@")[0] : "usuario");
 
   // ✅ Cambia esto si quieres mandar a otro correo
   const SUPPORT_EMAIL = "agsolutions96@gmail.com";
 
-  // mailto base (sin subject/body para no romper encoding; lo armamos en client)
   return (
     <div className="mx-auto w-full max-w-2xl space-y-6">
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Soporte</h1>
           <p className="mt-1 text-sm text-neutral-400">
-            Cuéntanos qué pasó y te ayudamos. Normalmente respondemos lo antes posible.
+            Cuéntanos qué pasó y te ayudamos. Normalmente respondemos lo antes
+            posible.
           </p>
         </div>
 
@@ -36,31 +35,24 @@ export default async function SoportePage() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5 space-y-3">
-        <div className="text-sm font-semibold text-neutral-100">
-          Info rápida
-        </div>
+        <div className="text-sm font-semibold text-neutral-100">Info rápida</div>
         <p className="text-sm text-neutral-400">
           Usuario: <span className="text-neutral-200">{name}</span>
           {email ? (
             <>
-              {" "}· Email: <span className="text-neutral-200">{email}</span>
+              {" "}
+              · Email: <span className="text-neutral-200">{email}</span>
             </>
           ) : null}
         </p>
         <p className="text-xs text-neutral-500">
-          Tip: incluye pasos para reproducir el problema y, si puedes, una captura.
+          Tip: incluye pasos para reproducir el problema y, si puedes, una
+          captura.
         </p>
       </div>
 
-      {/* ✅ Form simple (client-less): arma mailto con querystring */}
-      <form
-        action={(formData: FormData) => {
-          "use server";
-          // Este form no “envía” a servidor. Solo existe para UI.
-          // El envío real se hace con el botón mailto abajo (client).
-        }}
-        className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5 space-y-4"
-      >
+      {/* ✅ Form sin action (no server actions) */}
+      <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5 space-y-4">
         <div>
           <label className="text-sm text-neutral-300">Tema</label>
           <input
@@ -85,23 +77,27 @@ export default async function SoportePage() {
         </div>
 
         <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
-          <div className="text-sm font-semibold text-neutral-100">¿Cómo se envía?</div>
+          <div className="text-sm font-semibold text-neutral-100">
+            ¿Cómo se envía?
+          </div>
           <p className="mt-1 text-sm text-neutral-400">
-            Por ahora el soporte se envía por correo (se abre tu cliente de email).
+            Por ahora el soporte se envía por correo (se abre tu cliente de
+            email).
           </p>
-          <p className="mt-2 text-xs text-neutral-500">
-            Destino: {SUPPORT_EMAIL}
-          </p>
+          <p className="mt-2 text-xs text-neutral-500">Destino: {SUPPORT_EMAIL}</p>
         </div>
 
-        {/* Botones */}
         <div className="flex flex-wrap gap-3">
+          {/* ✅ mailto dinámico */}
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
             onClick={(e) => {
-              // armamos subject/body leyendo del DOM (sin hacer esta página client)
-              const subjectEl = document.getElementById("subject") as HTMLInputElement | null;
-              const messageEl = document.getElementById("message") as HTMLTextAreaElement | null;
+              const subjectEl = document.getElementById(
+                "subject"
+              ) as HTMLInputElement | null;
+              const messageEl = document.getElementById(
+                "message"
+              ) as HTMLTextAreaElement | null;
 
               const subject = subjectEl?.value?.trim() || "Soporte Promptory AI";
               const message = messageEl?.value?.trim() || "";
@@ -109,7 +105,6 @@ export default async function SoportePage() {
               const meta = [
                 `Usuario: ${name}`,
                 email ? `Email: ${email}` : "",
-                `Página: /dashboard/soporte`,
                 "",
                 "Mensaje:",
                 message,
@@ -136,11 +131,17 @@ export default async function SoportePage() {
             Cancelar
           </Link>
         </div>
-      </form>
+      </div>
 
       <p className="text-xs text-neutral-500">
-        Nota: este canal es para dudas y problemas del producto. Si quieres sugerir un prompt nuevo,
-        usa <Link className="underline hover:text-neutral-300" href="/dashboard/solicitar-prompt">Solicitar prompt</Link>.
+        Nota: si quieres sugerir un prompt nuevo, usa{" "}
+        <Link
+          className="underline hover:text-neutral-300"
+          href="/dashboard/solicitar-prompt"
+        >
+          Solicitar prompt
+        </Link>
+        .
       </p>
     </div>
   );
