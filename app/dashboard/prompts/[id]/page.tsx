@@ -3,13 +3,14 @@ export const runtime = "nodejs";
 import { notFound } from "next/navigation";
 import { getPromptById } from "@/lib/prompts";
 import CopyPromptButton from "./CopyPromptButton";
+import TranslateToEnglishCard from "./TranslateToEnglishCard"; // ✅ NUEVO
 
 export default async function PromptDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params; // ✅ Next 16: params puede ser Promise
+  const { id } = await params;
 
   const prompt = await getPromptById(id);
   if (!prompt) return notFound();
@@ -50,6 +51,9 @@ export default async function PromptDetailPage({
           {text}
         </pre>
       </div>
+
+      {/* ✅ NUEVO: Traducción on-the-fly (solo si está desbloqueado) */}
+      {!locked ? <TranslateToEnglishCard text={text} /> : null}
 
       {locked && (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
