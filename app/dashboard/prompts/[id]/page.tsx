@@ -3,7 +3,7 @@ export const runtime = "nodejs";
 import { notFound } from "next/navigation";
 import { getPromptById } from "@/lib/prompts";
 import CopyPromptButton from "./CopyPromptButton";
-import TranslateToEnglishCard from "./TranslateToEnglishCard"; // ✅ NUEVO
+// import TranslateToEnglishCard from "./TranslateToEnglishCard"; // ✅ NUEVO
 
 export default async function PromptDetailPage({
   params,
@@ -52,25 +52,7 @@ export default async function PromptDetailPage({
         </pre>
       </div>
 
-      {/* ✅ NUEVO: Traducción on-the-fly (solo si está desbloqueado) */}
-      {!locked ? <TranslateToEnglishCard text={text} /> : null}
-
-      {locked && (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
-          <p className="font-semibold text-amber-200">Prompt premium</p>
-          <p className="mt-1 text-sm text-amber-200/80">
-            Desbloquea por ${prompt.priceMx} MXN (pagos próximamente)
-          </p>
-
-          <button
-            disabled
-            className="mt-3 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-neutral-950 opacity-60"
-            title="Pagos aún no implementados"
-          >
-            Comprar
-          </button>
-        </div>
-      )}
+      
     </div>
   );
 }
