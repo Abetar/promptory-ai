@@ -1,18 +1,17 @@
-// app/dashboard/soporte/page.tsx
 import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import SupportForm from "./SupportForm";
 
 export const runtime = "nodejs";
 
 export default async function SoportePage() {
   const session = await getServerSession(authOptions);
 
-  const email = session?.user?.email || "";
-  const name =
-    session?.user?.name?.trim() || (email ? email.split("@")[0] : "usuario");
+  const userEmail = session?.user?.email || "";
+  const userName =
+    session?.user?.name?.trim() || (userEmail ? userEmail.split("@")[0] : "usuario");
 
-  // ✅ Cambia esto si quieres mandar a otro correo
   const SUPPORT_EMAIL = "agsolutions96@gmail.com";
 
   return (
@@ -21,8 +20,7 @@ export default async function SoportePage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Soporte</h1>
           <p className="mt-1 text-sm text-neutral-400">
-            Cuéntanos qué pasó y te ayudamos. Normalmente respondemos lo antes
-            posible.
+            Cuéntanos qué pasó y te ayudamos. Normalmente respondemos lo antes posible.
           </p>
         </div>
 
@@ -37,108 +35,29 @@ export default async function SoportePage() {
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5 space-y-3">
         <div className="text-sm font-semibold text-neutral-100">Info rápida</div>
         <p className="text-sm text-neutral-400">
-          Usuario: <span className="text-neutral-200">{name}</span>
-          {email ? (
+          Usuario: <span className="text-neutral-200">{userName}</span>
+          {userEmail ? (
             <>
               {" "}
-              · Email: <span className="text-neutral-200">{email}</span>
+              · Email: <span className="text-neutral-200">{userEmail}</span>
             </>
           ) : null}
         </p>
         <p className="text-xs text-neutral-500">
-          Tip: incluye pasos para reproducir el problema y, si puedes, una
-          captura.
+          Tip: incluye pasos para reproducir el problema y, si puedes, una captura.
         </p>
       </div>
 
-      {/* ✅ Form sin action (no server actions) */}
-      <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5 space-y-4">
-        <div>
-          <label className="text-sm text-neutral-300">Tema</label>
-          <input
-            id="subject"
-            name="subject"
-            required
-            placeholder="Ej. No puedo ver un pack / Error al guardar prompt"
-            className="mt-1 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 outline-none focus:border-neutral-700"
-          />
-        </div>
-
-        <div>
-          <label className="text-sm text-neutral-300">Mensaje</label>
-          <textarea
-            id="message"
-            name="message"
-            required
-            rows={5}
-            placeholder="Describe el problema, qué esperabas que pasara y qué ocurrió…"
-            className="mt-1 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-200 outline-none focus:border-neutral-700"
-          />
-        </div>
-
-        <div className="rounded-2xl border border-neutral-800 bg-neutral-950 p-4">
-          <div className="text-sm font-semibold text-neutral-100">
-            ¿Cómo se envía?
-          </div>
-          <p className="mt-1 text-sm text-neutral-400">
-            Por ahora el soporte se envía por correo (se abre tu cliente de
-            email).
-          </p>
-          <p className="mt-2 text-xs text-neutral-500">Destino: {SUPPORT_EMAIL}</p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          {/* ✅ mailto dinámico */}
-          <a
-            href={`mailto:${SUPPORT_EMAIL}`}
-            onClick={(e) => {
-              const subjectEl = document.getElementById(
-                "subject"
-              ) as HTMLInputElement | null;
-              const messageEl = document.getElementById(
-                "message"
-              ) as HTMLTextAreaElement | null;
-
-              const subject = subjectEl?.value?.trim() || "Soporte Promptory AI";
-              const message = messageEl?.value?.trim() || "";
-
-              const meta = [
-                `Usuario: ${name}`,
-                email ? `Email: ${email}` : "",
-                "",
-                "Mensaje:",
-                message,
-              ]
-                .filter(Boolean)
-                .join("\n");
-
-              const qs = new URLSearchParams({
-                subject: `[Promptory AI] ${subject}`,
-                body: meta,
-              }).toString();
-
-              (e.currentTarget as HTMLAnchorElement).href = `mailto:${SUPPORT_EMAIL}?${qs}`;
-            }}
-            className="inline-flex items-center justify-center rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
-          >
-            Enviar por correo →
-          </a>
-
-          <Link
-            href="/dashboard"
-            className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
-          >
-            Cancelar
-          </Link>
-        </div>
-      </div>
+      {/* ✅ Interacción va en Client Component */}
+      <SupportForm
+        supportEmail={SUPPORT_EMAIL}
+        userName={userName}
+        userEmail={userEmail}
+      />
 
       <p className="text-xs text-neutral-500">
         Nota: si quieres sugerir un prompt nuevo, usa{" "}
-        <Link
-          className="underline hover:text-neutral-300"
-          href="/dashboard/solicitar-prompt"
-        >
+        <Link className="underline hover:text-neutral-300" href="/dashboard/solicitar-prompt">
           Solicitar prompt
         </Link>
         .
