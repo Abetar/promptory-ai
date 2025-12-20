@@ -3,6 +3,28 @@ import { PrismaClient, PromptType } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+type SeedPrompt = {
+  title: string;
+  description: string;
+  type: PromptType;
+  isFree: boolean;
+  priceMx: number;
+  contentPreview: string;
+  contentFull: string;
+  isPublished: boolean;
+  aiSlugs: string[];
+};
+
+type SeedPack = {
+  slug: string;
+  title: string;
+  description: string;
+  isFree: boolean;
+  priceMx?: number | null; // lo permitimos aquí, pero NO lo mandamos como null a Prisma
+  isPublished: boolean;
+  promptTitles: string[];
+};
+
 async function main() {
   // 1) AI Tools base
   const aiTools = [
@@ -23,17 +45,19 @@ async function main() {
     select: { id: true, slug: true },
   });
 
-  const toolId = new Map(tools.map((t) => [t.slug, t.id]));
+  const toolId = new Map(tools.map((t) => [t.slug, t.id] as const));
 
   // 2) Prompts base
-  const prompts = [
+  const prompts: SeedPrompt[] = [
     {
       title: "Resumen ejecutivo de reunión",
-      description: "Convierte notas en un resumen claro con acciones y pendientes.",
+      description:
+        "Convierte notas en un resumen claro con acciones y pendientes.",
       type: PromptType.texto,
       isFree: true,
       priceMx: 0,
-      contentPreview: "Crea un resumen con: decisiones, tareas, responsables y fechas.",
+      contentPreview:
+        "Crea un resumen con: decisiones, tareas, responsables y fechas.",
       contentFull:
         "Eres un asistente experto. Toma estas notas y devuelve:\n1) Resumen ejecutivo\n2) Decisiones\n3) Acciones (owner + fecha)\n4) Riesgos\n5) Pendientes\nNotas:\n{{NOTAS}}",
       isPublished: true,
@@ -54,22 +78,24 @@ async function main() {
   ];
 
   for (const p of prompts) {
+    const links = p.aiSlugs
+      .map((slug) => toolId.get(slug))
+      .filter((v): v is string => Boolean(v))
+      .map((aiToolId) => ({ aiToolId }));
+
     const created = await prisma.prompt.upsert({
       where: { title: p.title },
       update: {
         description: p.description,
         type: p.type,
         isFree: p.isFree,
-        priceMx: p.priceMx,
+        priceMx: p.isFree ? 0 : p.priceMx,
         contentPreview: p.contentPreview,
         contentFull: p.contentFull,
         isPublished: p.isPublished,
         aiTools: {
-          deleteMany: {},
-          create: p.aiSlugs
-            .map((slug) => toolId.get(slug))
-            .filter(Boolean)
-            .map((aiToolId) => ({ aiToolId: aiToolId as string })),
+          deleteMany: {}, // solo borra relaciones de ESTE prompt
+          create: links,
         },
       },
       create: {
@@ -77,29 +103,110 @@ async function main() {
         description: p.description,
         type: p.type,
         isFree: p.isFree,
-        priceMx: p.priceMx,
+        priceMx: p.isFree ? 0 : p.priceMx,
         contentPreview: p.contentPreview,
         contentFull: p.contentFull,
         isPublished: p.isPublished,
-        aiTools: {
-          create: p.aiSlugs
-            .map((slug) => toolId.get(slug))
-            .filter(Boolean)
-            .map((aiToolId) => ({ aiToolId: aiToolId as string })),
-        },
+        aiTools: { create: links },
       },
-      select: { id: true },
+      select: { id: true, title: true },
     });
 
-    console.log("✅ prompt:", p.title, created.id);
+    console.log("✅ prompt:", created.title, created.id);
   }
 
-  console.log("✅ Seed terminado");
+  // 3) Packs base (free/premium; priceMx opcional)
+  const packs: SeedPack[] = [
+    {
+      slug: "starter-productividad",
+      title: "Pack Starter · Productividad",
+      description:
+        "Prompts esenciales para resumir, planear y ejecutar más rápido.",
+      isFree: true,
+      priceMx: null, // ok aquí
+      isPublished: true,
+      promptTitles: ["Resumen ejecutivo de reunión"],
+    },
+    {
+      slug: "pack-imagen-ecommerce",
+      title: "Pack · Imagen E-commerce",
+      description: "Prompts premium para generar imágenes tipo product shot.",
+      isFree: false,
+      priceMx: 49,
+      isPublished: true,
+      promptTitles: ["Prompt para imagen estilo product shot"],
+    },
+  ];
+
+  // Traemos los prompts por title para linkearlos a packs
+  const promptRows = await prisma.prompt.findMany({
+    where: { title: { in: packs.flatMap((p) => p.promptTitles) } },
+    select: { id: true, title: true },
+  });
+  const promptIdByTitle = new Map(
+    promptRows.map((p) => [p.title, p.id] as const)
+  );
+
+  for (const pack of packs) {
+    // ✅ data sin null: si es free, omitimos priceMx completamente
+    const packDataBase = {
+      slug: pack.slug,
+      title: pack.title,
+      description: pack.description,
+      isFree: pack.isFree,
+      isPublished: pack.isPublished,
+    };
+
+    const packData = pack.isFree
+      ? packDataBase
+      : {
+          ...packDataBase,
+          // premium: number sí o sí
+          priceMx: typeof pack.priceMx === "number" ? pack.priceMx : 0,
+        };
+
+    const createdPack = await prisma.pack.upsert({
+      where: { slug: pack.slug },
+      update: packData,
+      create: packData,
+      select: { id: true, slug: true },
+    });
+
+    // links pack <-> prompts (tabla puente)
+    await prisma.packPrompt.deleteMany({
+      where: { packId: createdPack.id },
+    });
+
+    const packLinks = pack.promptTitles
+      .map((t) => promptIdByTitle.get(t))
+      .filter((v): v is string => Boolean(v))
+      .map((promptId) => ({
+        packId: createdPack.id,
+        promptId,
+      }));
+
+    if (packLinks.length > 0) {
+      await prisma.packPrompt.createMany({
+        data: packLinks,
+        skipDuplicates: true,
+      });
+    }
+
+    // Aviso si algún título no se encontró
+    const missing = pack.promptTitles.filter((t) => !promptIdByTitle.has(t));
+    if (missing.length) {
+      console.warn("⚠️ pack", pack.slug, "no encontró prompts:", missing);
+    }
+
+    console.log("✅ pack:", createdPack.slug, "links:", packLinks.length);
+  }
+
+  console.log("✅ Seed terminado (AI Tools + Prompts + Packs)");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Seed error:", e);
     process.exit(1);
   })
   .finally(async () => {

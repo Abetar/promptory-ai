@@ -11,6 +11,10 @@ export default function DonarPage() {
           Promptory AI busca mantener la mayoría del contenido gratuito.
           Las donaciones ayudan a cubrir hosting, base de datos y tiempo de curación.
         </p>
+
+        <p className="mt-3 text-sm text-neutral-500">
+          * Los botones abren MercadoPago en una pestaña nueva.
+        </p>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -25,7 +29,7 @@ export default function DonarPage() {
               className="inline-flex w-full items-center justify-center rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
               href="https://mpago.la/23ufzeP"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               Donar $20 →
             </a>
@@ -43,7 +47,7 @@ export default function DonarPage() {
               className="inline-flex w-full items-center justify-center rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
               href="https://mpago.la/1Q8nSAF"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               Donar $50 →
             </a>
@@ -61,7 +65,7 @@ export default function DonarPage() {
               className="inline-flex w-full items-center justify-center rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
               href="https://mpago.la/19GZES9"
               target="_blank"
-              rel="noreferrer"
+              rel="noopener noreferrer"
             >
               Donar $100 →
             </a>
@@ -79,12 +83,20 @@ export default function DonarPage() {
         </p>
       </div>
 
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3">
         <Link
           href="/dashboard/prompts"
           className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
         >
           Volver al catálogo
+        </Link>
+
+        {/* ✅ opcional: cierra el loop con la feature de requests */}
+        <Link
+          href="/dashboard/solicitar-prompt"
+          className="inline-flex items-center justify-center rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
+        >
+          Solicitar un prompt →
         </Link>
       </div>
     </div>

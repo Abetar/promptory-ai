@@ -20,6 +20,8 @@ model User {
   // ✅ Favoritos/guardados
   promptSaves PromptSave[]
 
+  packs UserPack[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -114,6 +116,8 @@ model Prompt {
 
   // ✅ Favoritos/guardados
   saves PromptSave[]
+
+  packs PackPrompt[]
 }
 
 /**
@@ -132,3 +136,56 @@ model PromptSave {
   @@index([userId])
   @@index([promptId])
 }
+
+model Pack {
+  id          String   @id @default(cuid())
+  slug        String   @unique
+  title       String
+  description String
+  isFree      Boolean  @default(false)
+  priceMx     Int      @default(0)
+  isPublished Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  prompts     PackPrompt[]
+  users       UserPack[]
+}
+
+model PackPrompt {
+  packId   String
+  promptId String
+
+  pack     Pack   @relation(fields: [packId], references: [id], onDelete: Cascade)
+  prompt   Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@id([packId, promptId])
+  @@index([promptId])
+  @@index([packId])
+}
+
+model UserPack {
+  userId String
+  packId String
+
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pack   Pack @relation(fields: [packId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([userId, packId])
+  @@index([packId])
+  @@index([userId])
+}
+
+model PromptRequest {
+  id          String   @id @default(cuid())
+  userEmail   String
+  title       String
+  description String
+  aiTool      String?
+  createdAt   DateTime @default(now())
+  resolvedAt  DateTime?
+}
+
