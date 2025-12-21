@@ -1,7 +1,10 @@
 export const runtime = "nodejs";
 
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getPromptById } from "@/lib/prompts";
+import { canAccessPrompt } from "@/lib/access";
 import CopyPromptButton from "./CopyPromptButton";
 
 export default async function PromptDetailPage({
@@ -9,12 +12,19 @@ export default async function PromptDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params; // ✅ Next 16: params puede ser Promise
+  const { id } = await params;
 
   const prompt = await getPromptById(id);
   if (!prompt) return notFound();
 
-  const locked = !prompt.isFree;
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id as string | undefined;
+
+  // ✅ Determina si el usuario tiene derecho a ver el prompt premium
+  const hasAccess =
+    prompt.isFree ? true : await canAccessPrompt({ userId, promptId: prompt.id });
+
+  const locked = !hasAccess;
   const text = locked ? prompt.contentPreview : prompt.contentFull;
 
   return (
@@ -55,15 +65,16 @@ export default async function PromptDetailPage({
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
           <p className="font-semibold text-amber-200">Prompt premium</p>
           <p className="mt-1 text-sm text-amber-200/80">
-            Desbloquea por ${prompt.priceMx} MXN (pagos próximamente)
+            Este contenido está bloqueado. Desbloquea el pack correspondiente
+            (pagos/pruebas próximamente) o solicita acceso.
           </p>
 
           <button
             disabled
             className="mt-3 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-neutral-950 opacity-60"
-            title="Pagos aún no implementados"
+            title="Accesos premium aún no implementados"
           >
-            Comprar
+            Desbloquear
           </button>
         </div>
       )}
