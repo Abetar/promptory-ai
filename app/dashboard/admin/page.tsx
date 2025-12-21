@@ -82,6 +82,19 @@ export default async function AdminHomePage() {
           </div>
         </Link>
 
+        <Link
+          href="/dashboard/admin/users"
+          className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
+        >
+          <div className="text-sm font-semibold text-neutral-100">Usuarios</div>
+          <p className="mt-2 text-sm text-neutral-400">
+            Ver quién ya tiene cuenta en Promptory AI.
+          </p>
+          <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
+            Entrar →
+          </div>
+        </Link>
+
         {/* <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5">
           <div className="text-sm font-semibold text-neutral-100">AIs</div>
           <p className="mt-2 text-sm text-neutral-400">
