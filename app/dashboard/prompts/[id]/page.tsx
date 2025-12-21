@@ -1,7 +1,10 @@
 export const runtime = "nodejs";
 
 import { notFound } from "next/navigation";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getPromptById } from "@/lib/prompts";
+import { canAccessPrompt } from "@/lib/access";
 import CopyPromptButton from "./CopyPromptButton";
 // import TranslateToEnglishCard from "./TranslateToEnglishCard"; // ✅ NUEVO
 
@@ -15,7 +18,14 @@ export default async function PromptDetailPage({
   const prompt = await getPromptById(id);
   if (!prompt) return notFound();
 
-  const locked = !prompt.isFree;
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id as string | undefined;
+
+  // ✅ Determina si el usuario tiene derecho a ver el prompt premium
+  const hasAccess =
+    prompt.isFree ? true : await canAccessPrompt({ userId, promptId: prompt.id });
+
+  const locked = !hasAccess;
   const text = locked ? prompt.contentPreview : prompt.contentFull;
 
   return (
@@ -52,7 +62,27 @@ export default async function PromptDetailPage({
         </pre>
       </div>
 
+<<<<<<< HEAD
       
+=======
+      {locked && (
+        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
+          <p className="font-semibold text-amber-200">Prompt premium</p>
+          <p className="mt-1 text-sm text-amber-200/80">
+            Este contenido está bloqueado. Desbloquea el pack correspondiente
+            (pagos/pruebas próximamente) o solicita acceso.
+          </p>
+
+          <button
+            disabled
+            className="mt-3 rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-neutral-950 opacity-60"
+            title="Accesos premium aún no implementados"
+          >
+            Desbloquear
+          </button>
+        </div>
+      )}
+>>>>>>> dev/local
     </div>
   );
 }
