@@ -62,9 +62,6 @@ export default async function PromptDetailPage({
         </pre>
       </div>
 
-<<<<<<< HEAD
-      
-=======
       {locked && (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
           <p className="font-semibold text-amber-200">Prompt premium</p>
@@ -82,7 +79,6 @@ export default async function PromptDetailPage({
           </button>
         </div>
       )}
->>>>>>> dev/local
     </div>
   );
 }
