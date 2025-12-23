@@ -67,7 +67,9 @@ export default async function DashboardPage() {
           href="/dashboard/mis-prompts"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">Mis prompts</div>
+          <div className="text-sm font-semibold text-neutral-100">
+            Mis prompts
+          </div>
           <p className="mt-2 text-sm text-neutral-400">
             Favoritos y prompts guardados para acceso rápido.
           </p>
@@ -88,6 +90,21 @@ export default async function DashboardPage() {
           </p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Ver Packs →
+          </div>
+        </Link>
+
+        <Link
+          href="/dashboard/compras"
+          className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
+        >
+          <div className="text-sm font-semibold text-neutral-100">
+            Mis compras
+          </div>
+          <p className="mt-2 text-sm text-neutral-400">
+            Revisa el estado de tus packs premium.
+          </p>
+          <div className="mt-4 inline-flex rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition">
+            Ver historial →
           </div>
         </Link>
       </section>
