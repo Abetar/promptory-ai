@@ -2,23 +2,44 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { grantPromptAccessAction, revokePromptAccessAction } from "./actions";
+import {
+  grantPromptAccessAction,
+  revokePromptAccessAction,
+  revokeUserPackAction,
+} from "./actions";
 
 type UserOption = { id: string; email: string | null; name: string | null };
 type PromptOption = { id: string; title: string };
 
+// ✅ Ahora soporta filas de Prompt y de Pack
+type RecentRow =
+  | {
+      kind: "prompt";
+      userId: string;
+      itemId: string; // promptId
+      userEmail: string | null;
+      itemTitle: string; // promptTitle
+      source: string;
+      status: string; // "active" | etc
+      expiresAt: string | null;
+      createdAt: string;
+    }
+  | {
+      kind: "pack";
+      userId: string;
+      itemId: string; // packId
+      userEmail: string | null;
+      itemTitle: string; // packTitle
+      source: string; // "purchase"
+      status: string; // pending/approved/rejected/unknown
+      expiresAt: null;
+      createdAt: string;
+    };
+
 type Props = {
   users: UserOption[];
   prompts: PromptOption[];
-  recent: {
-    userId: string;
-    promptId: string;
-    userEmail: string | null;
-    promptTitle: string;
-    source: string;
-    expiresAt: string | null;
-    createdAt: string;
-  }[];
+  recent: RecentRow[];
 };
 
 type ActionState =
@@ -28,7 +49,6 @@ type ActionState =
 export default function AccessForm({ users, prompts, recent }: Props) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-
   const [state, setState] = useState<ActionState | null>(null);
 
   // Search inputs
@@ -58,7 +78,6 @@ export default function AccessForm({ users, prompts, recent }: Props) {
   async function onSubmit(formData: FormData) {
     setState(null);
 
-    // Forzamos que el form lleve ids (admin-friendly)
     formData.set("userId", selectedUserId);
     formData.set("promptId", selectedPromptId);
 
@@ -69,10 +88,19 @@ export default function AccessForm({ users, prompts, recent }: Props) {
     });
   }
 
-  async function onRevoke(userId: string, promptId: string) {
+  async function onRevokePrompt(userId: string, promptId: string) {
     setState(null);
     startTransition(async () => {
       const res = await revokePromptAccessAction(userId, promptId);
+      setState(res);
+      router.refresh();
+    });
+  }
+
+  async function onRevokePack(userId: string, packId: string) {
+    setState(null);
+    startTransition(async () => {
+      const res = await revokeUserPackAction(userId, packId);
       setState(res);
       router.refresh();
     });
@@ -91,11 +119,13 @@ export default function AccessForm({ users, prompts, recent }: Props) {
           ].join(" ")}
         >
           <div className="font-semibold">{state.ok ? "Listo" : "Error"}</div>
-          {state.message ? <div className="mt-1 opacity-90">{state.message}</div> : null}
+          {state.message ? (
+            <div className="mt-1 opacity-90">{state.message}</div>
+          ) : null}
         </div>
       ) : null}
 
-      {/* Form */}
+      {/* Form (solo PromptAccess manual, se queda igual) */}
       <form
         action={onSubmit}
         className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5 space-y-4"
@@ -208,7 +238,7 @@ export default function AccessForm({ users, prompts, recent }: Props) {
           </div>
         </div>
 
-        {/* Hidden fallbacks (por compatibilidad) */}
+        {/* Hidden fallbacks */}
         <input type="hidden" name="userEmail" value="" />
         <input type="hidden" name="promptId" value={selectedPromptId} />
         <input type="hidden" name="userId" value={selectedUserId} />
@@ -233,46 +263,83 @@ export default function AccessForm({ users, prompts, recent }: Props) {
       <div className="rounded-2xl border border-neutral-800 overflow-hidden">
         <div className="grid grid-cols-12 gap-0 bg-neutral-950 px-4 py-3 text-xs text-neutral-400">
           <div className="col-span-4">Usuario</div>
-          <div className="col-span-4">Prompt</div>
+          <div className="col-span-4">Acceso</div>
           <div className="col-span-2">Estado</div>
           <div className="col-span-2 text-right">Acciones</div>
         </div>
 
         <div className="divide-y divide-neutral-800">
           {recent.map((r) => {
-            const status = r.expiresAt ? `Expira ${r.expiresAt}` : "Permanente";
+            const key = `${r.kind}-${r.userId}-${r.itemId}`;
+
+            const badge =
+              r.kind === "pack"
+                ? r.status === "approved"
+                  ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                  : r.status === "rejected"
+                  ? "border-red-500/30 bg-red-500/10 text-red-200"
+                  : "border-amber-500/30 bg-amber-500/10 text-amber-200"
+                : "border-neutral-800 bg-neutral-950 text-neutral-300";
+
+            const statusText =
+              r.kind === "pack"
+                ? (r.status === "approved"
+                    ? "Compra aprobada"
+                    : r.status === "rejected"
+                    ? "Compra rechazada"
+                    : r.status === "pending"
+                    ? "Compra pendiente"
+                    : "Estado desconocido")
+                : r.expiresAt
+                ? `Expira ${r.expiresAt}`
+                : "Permanente";
+
             return (
               <div
-                key={`${r.userId}-${r.promptId}`}
+                key={key}
                 className="grid grid-cols-12 items-center gap-0 px-4 py-3 bg-neutral-900/30"
               >
-                <div className="col-span-4">
+                <div className="col-span-12 md:col-span-4">
                   <div className="text-sm font-semibold text-neutral-100">
                     {r.userEmail ?? r.userId}
                   </div>
                   <div className="text-xs text-neutral-500">{r.createdAt}</div>
                 </div>
 
-                <div className="col-span-4">
-                  <div className="text-sm text-neutral-200">{r.promptTitle}</div>
+                <div className="col-span-12 md:col-span-4 mt-3 md:mt-0">
+                  <div className="text-sm text-neutral-200">
+                    {r.kind === "pack" ? "Pack: " : "Prompt: "}
+                    {r.itemTitle}
+                  </div>
                   <div className="text-xs text-neutral-500">source: {r.source}</div>
                 </div>
 
-                <div className="col-span-2">
-                  <span className="text-xs rounded-full border border-neutral-800 bg-neutral-950 px-2 py-1 text-neutral-300">
-                    {status}
+                <div className="col-span-6 md:col-span-2 mt-3 md:mt-0">
+                  <span className={`text-xs rounded-full border px-2 py-1 ${badge}`}>
+                    {statusText}
                   </span>
                 </div>
 
-                <div className="col-span-2 flex justify-end">
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => onRevoke(r.userId, r.promptId)}
-                    className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200 hover:bg-red-500/15 transition disabled:opacity-60"
-                  >
-                    Revocar
-                  </button>
+                <div className="col-span-6 md:col-span-2 mt-3 md:mt-0 flex justify-end">
+                  {r.kind === "prompt" ? (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => onRevokePrompt(r.userId, r.itemId)}
+                      className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200 hover:bg-red-500/15 transition disabled:opacity-60"
+                    >
+                      Revocar
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={pending}
+                      onClick={() => onRevokePack(r.userId, r.itemId)}
+                      className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200 hover:bg-red-500/15 transition disabled:opacity-60"
+                    >
+                      Revocar pack
+                    </button>
+                  )}
                 </div>
               </div>
             );

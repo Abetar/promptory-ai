@@ -2,42 +2,65 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getPackBySlug } from "@/lib/packs";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
+import PurchasePackButton from "./PurchasePackButton";
 
 export const runtime = "nodejs";
 
 export default async function PackDetailPage({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: { slug: string } | Promise<{ slug: string }>;
 }) {
-  const { slug } = await params;
+  const { slug } = await Promise.resolve(params);
 
   const pack = await getPackBySlug(slug);
   if (!pack || !pack.isPublished) return notFound();
 
   const prompts = pack.prompts.map((pp) => pp.prompt);
 
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id as string | undefined;
+
+  const alreadyHasAccess = userId
+    ? !!(await prisma.userPack.findUnique({
+        where: { userId_packId: { userId, packId: pack.id } },
+        select: { userId: true },
+      }))
+    : false;
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-3">
-          <Link
-            href="/dashboard/packs"
-            className="text-sm text-neutral-400 hover:text-neutral-200"
-          >
-            ← Volver a packs
-          </Link>
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/dashboard/packs"
+              className="text-sm text-neutral-400 hover:text-neutral-200"
+            >
+              ← Volver a packs
+            </Link>
 
-          {pack.isFree ? (
-            <span className="text-xs rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-emerald-200">
-              Gratis
-            </span>
-          ) : (
-            <span className="text-xs rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-200">
-              Premium · ${pack.priceMx} MXN
-            </span>
-          )}
+            {pack.isFree ? (
+              <span className="text-xs rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-emerald-200">
+                Gratis
+              </span>
+            ) : (
+              <span className="text-xs rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-200">
+                Premium · ${pack.priceMx} MXN
+              </span>
+            )}
+          </div>
+
+          {/* CTA Compra */}
+          <PurchasePackButton
+            packId={pack.id}
+            isFree={pack.isFree}
+            alreadyHasAccess={alreadyHasAccess}
+          />
         </div>
 
         <div>
@@ -50,12 +73,12 @@ export default async function PackDetailPage({
           prompts incluidos
         </div>
 
-        {!pack.isFree && (
+        {!pack.isFree && !alreadyHasAccess && (
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-100">
-            <div className="font-semibold">Pack premium (sin pagos aún)</div>
+            <div className="font-semibold">Compra manual (MVP)</div>
             <p className="mt-1 text-sm text-amber-100/80">
-              Por ahora puedes explorar el contenido y previews. Más adelante
-              agregaremos desbloqueo manual / compra simulada.
+              Al presionar “Comprar pack” se crea una solicitud. Un admin la
+              aprobará manualmente y entonces se desbloquean los prompts.
             </p>
           </div>
         )}

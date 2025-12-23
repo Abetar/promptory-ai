@@ -92,6 +92,22 @@ export async function getPromptById(id: string) {
           aiTool: { select: { slug: true, name: true } },
         },
       },
+
+      // ✅ NUEVO: packs donde vive este prompt (para CTA "Ver pack")
+      packs: {
+        select: {
+          pack: {
+            select: {
+              id: true,
+              slug: true,
+              title: true,
+              isPublished: true,
+              isFree: true,
+              priceMx: true,
+            },
+          },
+        },
+      },
     },
   });
 }

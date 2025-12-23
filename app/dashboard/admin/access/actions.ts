@@ -3,6 +3,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import type { AccessSource } from "@prisma/client";
+import { revalidatePath } from "next/cache";
 
 type ActionState =
   | { ok: true; message?: string }
@@ -106,6 +107,8 @@ export async function grantPromptAccessAction(
     },
   });
 
+  revalidatePath("/dashboard/admin/access");
+
   return {
     ok: true,
     message: `Acceso otorgado a ${user.email ?? user.id} → "${prompt.title}"`,
@@ -131,11 +134,59 @@ export async function revokePromptAccessAction(
       },
     });
 
+    revalidatePath("/dashboard/admin/access");
     return { ok: true, message: "Acceso revocado correctamente." };
-  } catch (error) {
+  } catch {
     return {
       ok: false,
       message: "No se pudo revocar el acceso (quizá ya no existe).",
     };
   }
 }
+
+/**
+ * ❌ Revocar acceso por PACK (UserPack)
+ * (Esto afecta accesos otorgados por compras o asignación manual de pack)
+ */
+export async function revokeUserPackAction(
+  userId: string,
+  packId: string
+): Promise<ActionState> {
+  await requireAdmin();
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // 1) revocar acceso (si no existe, no pasa nada)
+      await tx.userPack
+        .delete({
+          where: { userId_packId: { userId, packId } },
+        })
+        .catch(() => null);
+
+      // 2) si hay una compra PENDING reciente, marcarla como rechazada
+      const lastPending = await tx.packPurchase.findFirst({
+        where: { userId, packId, status: "pending" },
+        orderBy: { createdAt: "desc" },
+        select: { id: true },
+      });
+
+      if (lastPending) {
+        await tx.packPurchase.update({
+          where: { id: lastPending.id },
+          data: { status: "rejected", rejectedAt: new Date(), approvedAt: null },
+        });
+      }
+    });
+
+    revalidatePath("/dashboard/admin/access");
+    revalidatePath("/dashboard/admin/purchases");
+
+    return { ok: true, message: "Pack revocado y compra pendiente rechazada." };
+  } catch {
+    return {
+      ok: false,
+      message: "No se pudo revocar el pack.",
+    };
+  }
+}
+

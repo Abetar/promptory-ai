@@ -1,3 +1,4 @@
+// app/dashboard/compras/page.tsx
 export const runtime = "nodejs";
 
 import Link from "next/link";
@@ -64,9 +65,18 @@ export default async function MisComprasPage() {
 
         <div className="divide-y divide-neutral-800">
           {purchases.map((p) => {
-            const created = p.createdAt.toISOString().slice(0, 10);
+            const created = new Intl.DateTimeFormat("es-MX", {
+              year: "numeric",
+              month: "2-digit",
+              day: "2-digit",
+            }).format(p.createdAt);
+
             const status =
-              p.status === "approved" ? "Aprobada" : p.status === "rejected" ? "Rechazada" : "Pendiente";
+              p.status === "approved"
+                ? "Aprobada"
+                : p.status === "rejected"
+                ? "Rechazada"
+                : "Pendiente";
 
             const badge =
               p.status === "approved"
@@ -78,15 +88,25 @@ export default async function MisComprasPage() {
             return (
               <div key={p.id} className="grid grid-cols-12 items-center gap-0 px-4 py-3 bg-neutral-900/30">
                 <div className="col-span-6">
-                  <div className="text-sm font-semibold text-neutral-100">{p.pack.title}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold text-neutral-100">{p.pack.title}</div>
+
+                    {p.status === "approved" ? (
+                      <Link
+                        href={`/dashboard/packs/${p.pack.slug}`}
+                        className="text-xs rounded-full border border-neutral-700 px-2 py-1 text-neutral-200 hover:bg-neutral-900 transition"
+                      >
+                        Ver pack →
+                      </Link>
+                    ) : null}
+                  </div>
+
                   <div className="text-xs text-neutral-500">/{p.pack.slug}</div>
                   <div className="mt-1 text-xs text-neutral-400">${p.amountMx} MXN</div>
                 </div>
 
                 <div className="col-span-3">
-                  <span className={`text-xs rounded-full border px-2 py-1 ${badge}`}>
-                    {status}
-                  </span>
+                  <span className={`text-xs rounded-full border px-2 py-1 ${badge}`}>{status}</span>
                 </div>
 
                 <div className="col-span-3 text-right text-xs text-neutral-500">{created}</div>
