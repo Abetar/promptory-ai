@@ -73,7 +73,7 @@ export default async function PackDetailPage({
           prompts incluidos
         </div>
 
-        {!pack.isFree && !alreadyHasAccess && (
+        {/* {!pack.isFree && !alreadyHasAccess && (
           <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 p-4 text-amber-100">
             <div className="font-semibold">Compra manual (MVP)</div>
             <p className="mt-1 text-sm text-amber-100/80">
@@ -81,7 +81,7 @@ export default async function PackDetailPage({
               aprobará manualmente y entonces se desbloquean los prompts.
             </p>
           </div>
-        )}
+        )} */}
       </div>
 
       {/* Grid prompts incluidos */}
