@@ -11,7 +11,7 @@ import { getSavedPromptIdsForCurrentUser } from "./save-actions";
 export const runtime = "nodejs";
 
 type PriceFilter = "all" | "free" | "premium";
-type SortFilter = "new" | "price_asc" | "price_desc";
+type SortFilter = "new";
 
 export default async function PromptsPage({
   searchParams,
@@ -23,7 +23,10 @@ export default async function PromptsPage({
   const type = (sp.type as PromptType | undefined) || undefined;
   const ai = sp.ai || undefined;
   const price = (sp.price as PriceFilter | undefined) || "all";
-  const sort = (sp.sort as SortFilter | undefined) || "new";
+
+  // ✅ Ya no soportamos sort por precio (Prompt ya no tiene priceMx)
+  const sort: SortFilter = "new";
+
   const q = sp.q || undefined;
 
   const [aiTools, prompts, savedIds] = await Promise.all([
@@ -35,29 +38,31 @@ export default async function PromptsPage({
   return (
     <div className="space-y-6">
       {/* Page header */}
-      <div className="flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+      <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
             Catálogo de Prompts
           </h1>
           <p className="mt-1 text-sm text-neutral-400">
-            Banco de prompts optimizados por herramienta de IA, tipo y precio.
+            Banco de prompts optimizados por herramienta de IA y tipo.
           </p>
         </div>
 
-        <div className="text-sm text-neutral-400">
-          <span className="text-neutral-200 font-semibold">
-            {prompts.length}
-          </span>{" "}
-          resultados
-        </div>
+        <div className="flex flex-col gap-2 md:items-end">
+          <div className="text-sm text-neutral-400">
+            <span className="text-neutral-200 font-semibold">
+              {prompts.length}
+            </span>{" "}
+            resultados
+          </div>
 
-        <Link
-          href="/dashboard/solicitar-prompt"
-          className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
-        >
-          Solicitar prompt +
-        </Link>
+          <Link
+            href="/dashboard/solicitar-prompt"
+            className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
+          >
+            Solicitar prompt +
+          </Link>
+        </div>
       </div>
 
       {/* Filters Bar */}
@@ -87,7 +92,7 @@ export default async function PromptsPage({
                     </span>
                   ) : (
                     <span className="text-xs rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-200">
-                      Premium · ${p.priceMx} MXN
+                      Incluido en pack
                     </span>
                   )}
 

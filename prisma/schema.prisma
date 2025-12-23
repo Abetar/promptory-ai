@@ -25,9 +25,11 @@ model User {
   // ✅ Accesos directos a prompts (entitlements)
   promptAccesses UserPromptAccess[]
 
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
-  PackPurchase PackPurchase[]
+  // ✅ Historial compras de packs
+  packPurchases PackPurchase[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Account {
@@ -106,8 +108,7 @@ model Prompt {
   description String
   type        PromptType
 
-  isFree  Boolean @default(false)
-  priceMx Int     @default(0)
+  isFree Boolean @default(false)
 
   contentPreview String
   contentFull    String
@@ -156,9 +157,11 @@ model Pack {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  prompts      PackPrompt[]
-  users        UserPack[]
-  PackPurchase PackPurchase[]
+  prompts PackPrompt[]
+  users   UserPack[]
+
+  // ✅ Historial compras
+  purchases PackPurchase[]
 }
 
 model PackPrompt {
@@ -237,8 +240,8 @@ model PackPurchase {
   status   PurchaseStatus @default(pending)
 
   // conciliación manual
-  mpPaymentId String? // folio/ID de MercadoPago (si el usuario lo pega)
-  note        String? // nota interna admin
+  mpPaymentId String?
+  note        String?
   approvedAt  DateTime?
   rejectedAt  DateTime?
 

@@ -15,7 +15,6 @@ export default async function AdminPromptsListPage() {
       title: true,
       type: true,
       isFree: true,
-      priceMx: true,
       isPublished: true,
       createdAt: true,
       aiTools: { select: { aiTool: { select: { name: true, slug: true } } } },
@@ -44,14 +43,17 @@ export default async function AdminPromptsListPage() {
         <div className="grid grid-cols-12 gap-0 bg-neutral-950 px-4 py-3 text-xs text-neutral-400">
           <div className="col-span-5">Título</div>
           <div className="col-span-2">Tipo</div>
-          <div className="col-span-2">Precio</div>
+          <div className="col-span-2">Disponibilidad</div>
           <div className="col-span-1">Live</div>
           <div className="col-span-2 text-right">Acciones</div>
         </div>
 
         <div className="divide-y divide-neutral-800">
           {prompts.map((p) => (
-            <div key={p.id} className="grid grid-cols-12 items-center gap-0 px-4 py-3 bg-neutral-900/30">
+            <div
+              key={p.id}
+              className="grid grid-cols-12 items-center gap-0 px-4 py-3 bg-neutral-900/30"
+            >
               <div className="col-span-5">
                 <div className="text-sm font-semibold text-neutral-100">{p.title}</div>
                 <div className="mt-1 flex flex-wrap gap-2">
@@ -77,7 +79,7 @@ export default async function AdminPromptsListPage() {
                 {p.isFree ? (
                   <span className="text-emerald-200">Gratis</span>
                 ) : (
-                  <span className="text-amber-200">${p.priceMx} MXN</span>
+                  <span className="text-amber-200">Incluido en pack</span>
                 )}
               </div>
 
@@ -101,7 +103,12 @@ export default async function AdminPromptsListPage() {
                   Editar
                 </Link>
 
-                <form action={async () => { "use server"; await togglePublishAction(p.id); }}>
+                <form
+                  action={async () => {
+                    "use server";
+                    await togglePublishAction(p.id);
+                  }}
+                >
                   <button
                     type="submit"
                     className="rounded-xl border border-neutral-800 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900 transition"
@@ -110,7 +117,12 @@ export default async function AdminPromptsListPage() {
                   </button>
                 </form>
 
-                <form action={async () => { "use server"; await deletePromptAction(p.id); }}>
+                <form
+                  action={async () => {
+                    "use server";
+                    await deletePromptAction(p.id);
+                  }}
+                >
                   <button
                     type="submit"
                     className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200 hover:bg-red-500/15 transition"

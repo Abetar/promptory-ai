@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useEffect, useState } from "react";
+import { useActionState, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // ✅ No dependas de Prisma aquí (evita broncas en Vercel)
@@ -50,7 +50,6 @@ export default function PromptForm({
     description?: string;
     type?: PromptType;
     isFree?: boolean;
-    priceMx?: number;
     contentPreview?: string;
     contentFull?: string;
     isPublished?: boolean;
@@ -60,7 +59,7 @@ export default function PromptForm({
   const router = useRouter();
 
   const dv = defaultValues ?? {};
-  const selected = new Set(dv.aiSlugs ?? []);
+  const selected = useMemo(() => new Set(dv.aiSlugs ?? []), [dv.aiSlugs]);
 
   // ✅ Evita redirect al cargar (solo después de submit)
   const [didSubmit, setDidSubmit] = useState(false);
@@ -76,15 +75,24 @@ export default function PromptForm({
     }
   }, [didSubmit, state.ok, redirectTo, router]);
 
+  // ✅ Estado local solo para UX
+  const [isFreeLocal, setIsFreeLocal] = useState<boolean>(dv.isFree ?? false);
+
+  async function onSubmit(formData: FormData) {
+    // Si es gratis y no llenaron preview, copia full -> preview (para no forzar duplicado)
+    const isFree = formData.get("isFree") === "on" || formData.get("isFree") === "true";
+    if (isFree) {
+      const preview = String(formData.get("contentPreview") ?? "").trim();
+      const full = String(formData.get("contentFull") ?? "").trim();
+      if (!preview && full) formData.set("contentPreview", full);
+    }
+    setDidSubmit(true);
+    return formAction(formData);
+  }
+
   return (
-    <form
-      action={formAction}
-      onSubmit={() => setDidSubmit(true)}
-      className="space-y-6"
-    >
-      {state.ok === false ? (
-        <Alert variant="error" message={state.message} />
-      ) : null}
+    <form action={onSubmit} className="space-y-6">
+      {state.ok === false ? <Alert variant="error" message={state.message} /> : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-2">
@@ -122,26 +130,25 @@ export default function PromptForm({
           />
         </div>
 
+        {/* ✅ Acceso (free/premium) SIN precio */}
         <div className="space-y-2">
-          <label className="text-sm text-neutral-300">Precio</label>
+          <label className="text-sm text-neutral-300">Acceso</label>
           <div className="flex flex-wrap items-center gap-3 rounded-xl border border-neutral-800 bg-neutral-950 p-3">
             <label className="flex items-center gap-2 text-sm text-neutral-200">
               <input
                 type="checkbox"
                 name="isFree"
                 defaultChecked={dv.isFree ?? false}
+                onChange={(e) => setIsFreeLocal(e.target.checked)}
               />
               Gratis
             </label>
 
-            <input
-              name="priceMx"
-              type="number"
-              min={0}
-              defaultValue={dv.priceMx ?? 0}
-              className="h-10 w-40 rounded-xl border border-neutral-800 bg-neutral-950 px-3 text-sm text-neutral-200 outline-none"
-            />
-            <span className="text-sm text-neutral-500">MXN</span>
+            <span className="text-xs text-neutral-500">
+              {isFreeLocal
+                ? "Gratis: visible para todos."
+                : "Premium: se desbloquea por pack o por acceso manual."}
+            </span>
           </div>
         </div>
 
@@ -185,8 +192,14 @@ export default function PromptForm({
             name="contentPreview"
             defaultValue={dv.contentPreview ?? ""}
             className="min-h-44 w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-3 text-sm text-neutral-200 outline-none"
-            required
+            placeholder={isFreeLocal ? "Opcional (si lo dejas vacío, se copiará desde Full)" : ""}
+            required={!isFreeLocal}
           />
+          {isFreeLocal ? (
+            <p className="text-xs text-neutral-500">
+              Si está vacío, se usará automáticamente el contenido Full.
+            </p>
+          ) : null}
         </div>
 
         <div className="space-y-2">

@@ -21,6 +21,7 @@ export default async function PromptDetailPage({
 
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
+  const isLoggedIn = Boolean(userId);
 
   // ✅ Determinar acceso real
   const hasAccess = prompt.isFree
@@ -50,17 +51,13 @@ export default async function PromptDetailPage({
             </span>
           ) : (
             <span className="text-xs rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-200">
-              Premium · ${prompt.priceMx} MXN
+              Incluido en pack
             </span>
           )}
         </div>
 
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {prompt.title}
-        </h1>
-        <p className="text-sm text-neutral-400">
-          {prompt.description}
-        </p>
+        <h1 className="text-2xl font-semibold tracking-tight">{prompt.title}</h1>
+        <p className="text-sm text-neutral-400">{prompt.description}</p>
       </div>
 
       {/* Prompt content */}
@@ -79,12 +76,10 @@ export default async function PromptDetailPage({
       {locked && (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4 space-y-3">
           <div>
-            <p className="font-semibold text-amber-200">
-              Prompt premium
-            </p>
+            <p className="font-semibold text-amber-200">Incluido en pack</p>
             <p className="mt-1 text-sm text-amber-200/80">
-              Este contenido está bloqueado. Desbloquéalo comprando el
-              pack correspondiente o solicita acceso.
+              Este contenido está bloqueado. Desbloquéalo comprando el pack
+              correspondiente o solicita acceso.
             </p>
           </div>
 
@@ -96,12 +91,21 @@ export default async function PromptDetailPage({
               Ver packs
             </Link>
 
-            <Link
-              href="/dashboard/soporte"
-              className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
-            >
-              Solicitar acceso
-            </Link>
+            {isLoggedIn ? (
+              <Link
+                href="/dashboard/soporte"
+                className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
+              >
+                Solicitar acceso
+              </Link>
+            ) : (
+              <Link
+                href="/api/auth/signin"
+                className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
+              >
+                Iniciar sesión
+              </Link>
+            )}
           </div>
 
           <p className="text-xs text-neutral-400">

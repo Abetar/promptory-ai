@@ -9,11 +9,6 @@ export type ActionState =
   | { ok: true; message?: string }
   | { ok: false; message: string };
 
-function parseIntSafe(v: FormDataEntryValue | null, fallback = 0) {
-  const n = Number(v ?? fallback);
-  return Number.isFinite(n) ? Math.trunc(n) : fallback;
-}
-
 function getString(fd: FormData, key: string) {
   return String(fd.get(key) ?? "").trim();
 }
@@ -50,7 +45,9 @@ export async function createPromptAction(
     const type = getString(formData, "type") as PromptType;
 
     const isFree = getBool(formData, "isFree");
-    const priceMx = isFree ? 0 : parseIntSafe(formData.get("priceMx"), 0);
+
+    // ✅ Ya NO existe precio por prompt
+    const priceMx = 0;
 
     const contentPreview = getString(formData, "contentPreview");
     const contentFull = getString(formData, "contentFull");
@@ -60,11 +57,12 @@ export async function createPromptAction(
 
     // Validaciones
     if (!title) return { ok: false, message: "El título es obligatorio." };
-    if (!description) return { ok: false, message: "La descripción es obligatoria." };
-    if (!contentPreview) return { ok: false, message: "El preview es obligatorio." };
-    if (!contentFull) return { ok: false, message: "El contenido full es obligatorio." };
-    if (!isFree && priceMx <= 0)
-      return { ok: false, message: "Si es Premium, el precio debe ser mayor a 0." };
+    if (!description)
+      return { ok: false, message: "La descripción es obligatoria." };
+    if (!contentPreview)
+      return { ok: false, message: "El preview es obligatorio." };
+    if (!contentFull)
+      return { ok: false, message: "El contenido full es obligatorio." };
     if (aiSlugs.length === 0)
       return { ok: false, message: "Selecciona al menos una AI objetivo." };
 
@@ -79,7 +77,7 @@ export async function createPromptAction(
         description,
         type,
         isFree,
-        priceMx,
+        priceMx, // siempre 0
         contentPreview,
         contentFull,
         isPublished,
@@ -92,7 +90,6 @@ export async function createPromptAction(
     revalidatePath("/dashboard/admin/prompts");
     revalidatePath("/dashboard/prompts");
 
-    // ✅ NO redirect aquí (mejor en el client)
     return { ok: true, message: "Prompt creado correctamente." };
   } catch (e) {
     return { ok: false, message: friendlyError(e) };
@@ -116,7 +113,9 @@ export async function updatePromptAction(
     const type = getString(formData, "type") as PromptType;
 
     const isFree = getBool(formData, "isFree");
-    const priceMx = isFree ? 0 : parseIntSafe(formData.get("priceMx"), 0);
+
+    // ✅ Ya NO existe precio por prompt
+    const priceMx = 0;
 
     const contentPreview = getString(formData, "contentPreview");
     const contentFull = getString(formData, "contentFull");
@@ -126,11 +125,12 @@ export async function updatePromptAction(
 
     // Validaciones
     if (!title) return { ok: false, message: "El título es obligatorio." };
-    if (!description) return { ok: false, message: "La descripción es obligatoria." };
-    if (!contentPreview) return { ok: false, message: "El preview es obligatorio." };
-    if (!contentFull) return { ok: false, message: "El contenido full es obligatorio." };
-    if (!isFree && priceMx <= 0)
-      return { ok: false, message: "Si es Premium, el precio debe ser mayor a 0." };
+    if (!description)
+      return { ok: false, message: "La descripción es obligatoria." };
+    if (!contentPreview)
+      return { ok: false, message: "El preview es obligatorio." };
+    if (!contentFull)
+      return { ok: false, message: "El contenido full es obligatorio." };
     if (aiSlugs.length === 0)
       return { ok: false, message: "Selecciona al menos una AI objetivo." };
 
@@ -146,7 +146,7 @@ export async function updatePromptAction(
         description,
         type,
         isFree,
-        priceMx,
+        priceMx, // siempre 0
         contentPreview,
         contentFull,
         isPublished,
@@ -161,7 +161,6 @@ export async function updatePromptAction(
     revalidatePath(`/dashboard/prompts/${promptId}`);
     revalidatePath("/dashboard/prompts");
 
-    // ✅ NO redirect aquí (mejor en el client)
     return { ok: true, message: "Cambios guardados." };
   } catch (e) {
     return { ok: false, message: friendlyError(e) };

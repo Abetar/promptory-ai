@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { PromptType, Prisma } from "@prisma/client";
 
 type PriceFilter = "all" | "free" | "premium";
-type SortFilter = "new" | "price_asc" | "price_desc";
+type SortFilter = "new"; // ✅ Sin precio en Prompt
 
 export type ListPromptsInput = {
   type?: PromptType;
@@ -12,26 +12,13 @@ export type ListPromptsInput = {
   q?: string;
 };
 
-function buildOrderBy(sort: SortFilter): Prisma.PromptOrderByWithRelationInput {
-  switch (sort) {
-    case "price_asc":
-      return { priceMx: "asc" };
-    case "price_desc":
-      return { priceMx: "desc" };
-    case "new":
-    default:
-      return { createdAt: "desc" };
-  }
+function buildOrderBy(_sort: SortFilter): Prisma.PromptOrderByWithRelationInput {
+  // ✅ Sin precio en Prompt: solo orden por nuevo
+  return { createdAt: "desc" };
 }
 
 export async function listPrompts(input: ListPromptsInput = {}) {
-  const {
-    type,
-    aiSlug,
-    price = "all",
-    sort = "new",
-    q,
-  } = input;
+  const { type, aiSlug, price = "all", sort = "new", q } = input;
 
   const where: Prisma.PromptWhereInput = {
     isPublished: true,
@@ -66,13 +53,12 @@ export async function listPrompts(input: ListPromptsInput = {}) {
       description: true,
       type: true,
       isFree: true,
-      priceMx: true,
       contentPreview: true,
       isPublished: true,
       createdAt: true,
       updatedAt: true,
 
-      // ✅ IMPORTANTE: siempre incluir aiTools para que exista en TS
+      // ✅ siempre incluir aiTools para que exista en TS
       aiTools: {
         select: {
           aiTool: {
@@ -96,7 +82,6 @@ export async function getPromptById(id: string) {
       description: true,
       type: true,
       isFree: true,
-      priceMx: true,
       contentPreview: true,
       contentFull: true,
       isPublished: true,

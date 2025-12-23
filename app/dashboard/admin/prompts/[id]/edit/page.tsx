@@ -17,7 +17,6 @@ type PromptForEdit = {
   description: string;
   type: "texto" | "imagen" | "video";
   isFree: boolean;
-  priceMx: number;
   contentPreview: string;
   contentFull: string;
   isPublished: boolean;
@@ -46,7 +45,6 @@ export default async function EditPromptPage({
         description: true,
         type: true,
         isFree: true,
-        priceMx: true,
         contentPreview: true,
         contentFull: true,
         isPublished: true,
@@ -101,11 +99,10 @@ export default async function EditPromptPage({
             description: safePrompt.description,
             type: safePrompt.type,
             isFree: safePrompt.isFree,
-            priceMx: safePrompt.priceMx,
             contentPreview: safePrompt.contentPreview,
             contentFull: safePrompt.contentFull,
             isPublished: safePrompt.isPublished,
-            aiSlugs: safePrompt.aiTools.map((x) => x.aiTool.slug), 
+            aiSlugs: safePrompt.aiTools.map((x) => x.aiTool.slug),
           }}
         />
       </div>
