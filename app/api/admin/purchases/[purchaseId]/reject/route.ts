@@ -1,16 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 
 export const runtime = "nodejs";
 
 export async function POST(
-  _req: Request,
-  { params }: { params: { purchaseId: string } | Promise<{ purchaseId: string }> }
-) {
+  _req: NextRequest,
+  context: { params: { purchaseId: string } }
+): Promise<Response> {
   try {
     await requireAdmin();
-    const { purchaseId } = await Promise.resolve(params);
+    const { purchaseId } = context.params;
 
     const result = await prisma.$transaction(async (tx) => {
       const purchase = await tx.packPurchase.findUnique({

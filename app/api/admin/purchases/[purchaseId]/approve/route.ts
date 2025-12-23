@@ -1,16 +1,16 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 
 export const runtime = "nodejs";
 
 export async function POST(
-  _req: Request,
-  { params }: { params: { purchaseId: string } }
-) {
+  _req: NextRequest,
+  context: { params: { purchaseId: string } }
+): Promise<Response> {
   try {
     await requireAdmin();
-    const { purchaseId } = params;
+    const { purchaseId } = context.params;
 
     const result = await prisma.$transaction(async (tx) => {
       const purchase = await tx.packPurchase.findUnique({
@@ -28,7 +28,9 @@ export async function POST(
       // Idempotente: si ya está approved, aseguramos entitlement y listo
       if (purchase.status === "approved") {
         await tx.userPack.upsert({
-          where: { userId_packId: { userId: purchase.userId, packId: purchase.packId } },
+          where: {
+            userId_packId: { userId: purchase.userId, packId: purchase.packId },
+          },
           update: {},
           create: { userId: purchase.userId, packId: purchase.packId },
         });
@@ -46,7 +48,9 @@ export async function POST(
 
       // pending -> approved
       await tx.userPack.upsert({
-        where: { userId_packId: { userId: purchase.userId, packId: purchase.packId } },
+        where: {
+          userId_packId: { userId: purchase.userId, packId: purchase.packId },
+        },
         update: {},
         create: { userId: purchase.userId, packId: purchase.packId },
       });
