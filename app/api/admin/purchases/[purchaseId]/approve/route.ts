@@ -6,11 +6,12 @@ export const runtime = "nodejs";
 
 export async function POST(
   _req: NextRequest,
-  context: { params: { purchaseId: string } }
+  context: { params: Promise<{ purchaseId: string }> }
 ): Promise<Response> {
   try {
     await requireAdmin();
-    const { purchaseId } = context.params;
+
+    const { purchaseId } = await context.params;
 
     const result = await prisma.$transaction(async (tx) => {
       const purchase = await tx.packPurchase.findUnique({

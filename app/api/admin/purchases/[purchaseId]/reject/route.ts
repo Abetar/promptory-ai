@@ -6,11 +6,12 @@ export const runtime = "nodejs";
 
 export async function POST(
   _req: NextRequest,
-  context: { params: { purchaseId: string } }
+  context: { params: Promise<{ purchaseId: string }> }
 ): Promise<Response> {
   try {
     await requireAdmin();
-    const { purchaseId } = context.params;
+
+    const { purchaseId } = await context.params;
 
     const result = await prisma.$transaction(async (tx) => {
       const purchase = await tx.packPurchase.findUnique({
@@ -19,7 +20,10 @@ export async function POST(
       });
 
       if (!purchase) {
-        return { statusCode: 404, body: { ok: false, message: "Purchase not found" } };
+        return {
+          statusCode: 404,
+          body: { ok: false, message: "Purchase not found" },
+        };
       }
 
       // Si ya está rechazada, idempotente
@@ -27,7 +31,9 @@ export async function POST(
         // aseguramos que NO tenga acceso
         await tx.userPack
           .delete({
-            where: { userId_packId: { userId: purchase.userId, packId: purchase.packId } },
+            where: {
+              userId_packId: { userId: purchase.userId, packId: purchase.packId },
+            },
           })
           .catch(() => null);
 
@@ -52,7 +58,9 @@ export async function POST(
       // Revocar acceso
       await tx.userPack
         .delete({
-          where: { userId_packId: { userId: updated.userId, packId: updated.packId } },
+          where: {
+            userId_packId: { userId: updated.userId, packId: updated.packId },
+          },
         })
         .catch(() => null);
 
