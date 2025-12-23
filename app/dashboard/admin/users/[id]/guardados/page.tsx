@@ -31,7 +31,7 @@ export default async function AdminUserSavedPromptsPage({
           title: true,
           type: true,
           isFree: true,
-          priceMx: true,
+          // ❌ priceMx: true,  // ya no existe
         },
       },
     },
@@ -77,12 +77,9 @@ export default async function AdminUserSavedPromptsPage({
                 >
                   {s.prompt.title}
                 </Link>
+
                 <div className="mt-1 text-xs text-neutral-500">
-                  {s.prompt.isFree ? (
-                    "Gratis"
-                  ) : (
-                    <>Premium · ${s.prompt.priceMx} MXN</>
-                  )}
+                  {s.prompt.isFree ? "Gratis" : "Incluido en pack"}
                 </div>
               </div>
 
@@ -93,8 +90,6 @@ export default async function AdminUserSavedPromptsPage({
               <div className="col-span-2 text-right text-sm text-neutral-300">
                 {s.createdAt.toISOString().slice(0, 10)}
               </div>
-
-              
             </div>
           ))}
 

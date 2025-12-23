@@ -1,3 +1,4 @@
+// app/dashboard/admin/prompts/actions.ts
 "use server";
 
 import { prisma } from "@/lib/prisma";
@@ -46,9 +47,6 @@ export async function createPromptAction(
 
     const isFree = getBool(formData, "isFree");
 
-    // ✅ Ya NO existe precio por prompt
-    const priceMx = 0;
-
     const contentPreview = getString(formData, "contentPreview");
     const contentFull = getString(formData, "contentFull");
     const isPublished = getBool(formData, "isPublished");
@@ -77,7 +75,6 @@ export async function createPromptAction(
         description,
         type,
         isFree,
-        priceMx, // siempre 0
         contentPreview,
         contentFull,
         isPublished,
@@ -114,9 +111,6 @@ export async function updatePromptAction(
 
     const isFree = getBool(formData, "isFree");
 
-    // ✅ Ya NO existe precio por prompt
-    const priceMx = 0;
-
     const contentPreview = getString(formData, "contentPreview");
     const contentFull = getString(formData, "contentFull");
     const isPublished = getBool(formData, "isPublished");
@@ -146,7 +140,6 @@ export async function updatePromptAction(
         description,
         type,
         isFree,
-        priceMx, // siempre 0
         contentPreview,
         contentFull,
         isPublished,

@@ -8,7 +8,6 @@ type SeedPrompt = {
   description: string;
   type: PromptType;
   isFree: boolean;
-  priceMx: number;
   contentPreview: string;
   contentFull: string;
   isPublished: boolean;
@@ -47,17 +46,14 @@ async function main() {
 
   const toolId = new Map(tools.map((t) => [t.slug, t.id] as const));
 
-  // 2) Prompts base
+  // 2) Prompts base (SIN priceMx)
   const prompts: SeedPrompt[] = [
     {
       title: "Resumen ejecutivo de reunión",
-      description:
-        "Convierte notas en un resumen claro con acciones y pendientes.",
+      description: "Convierte notas en un resumen claro con acciones y pendientes.",
       type: PromptType.texto,
       isFree: true,
-      priceMx: 0,
-      contentPreview:
-        "Crea un resumen con: decisiones, tareas, responsables y fechas.",
+      contentPreview: "Crea un resumen con: decisiones, tareas, responsables y fechas.",
       contentFull:
         "Eres un asistente experto. Toma estas notas y devuelve:\n1) Resumen ejecutivo\n2) Decisiones\n3) Acciones (owner + fecha)\n4) Riesgos\n5) Pendientes\nNotas:\n{{NOTAS}}",
       isPublished: true,
@@ -67,8 +63,7 @@ async function main() {
       title: "Prompt para imagen estilo product shot",
       description: "Genera un prompt para render e-commerce.",
       type: PromptType.imagen,
-      isFree: false,
-      priceMx: 20,
+      isFree: false, // premium -> se desbloquea por pack o acceso directo
       contentPreview: "Describe producto, fondo, iluminación, lente y estilo.",
       contentFull:
         "Genera un prompt para imagen e-commerce hiperrealista con:\n- Producto: {{PRODUCTO}}\n- Materiales: {{MATERIALES}}\n- Fondo: {{FONDO}}\n- Iluminación: softbox\n- Lente: 85mm\n- Calidad: ultra\nDevuelve 3 variantes.",
@@ -89,7 +84,6 @@ async function main() {
         description: p.description,
         type: p.type,
         isFree: p.isFree,
-        priceMx: p.isFree ? 0 : p.priceMx,
         contentPreview: p.contentPreview,
         contentFull: p.contentFull,
         isPublished: p.isPublished,
@@ -103,7 +97,6 @@ async function main() {
         description: p.description,
         type: p.type,
         isFree: p.isFree,
-        priceMx: p.isFree ? 0 : p.priceMx,
         contentPreview: p.contentPreview,
         contentFull: p.contentFull,
         isPublished: p.isPublished,
@@ -120,8 +113,7 @@ async function main() {
     {
       slug: "starter-productividad",
       title: "Pack Starter · Productividad",
-      description:
-        "Prompts esenciales para resumir, planear y ejecutar más rápido.",
+      description: "Prompts esenciales para resumir, planear y ejecutar más rápido.",
       isFree: true,
       priceMx: null, // ok aquí
       isPublished: true,
@@ -143,9 +135,7 @@ async function main() {
     where: { title: { in: packs.flatMap((p) => p.promptTitles) } },
     select: { id: true, title: true },
   });
-  const promptIdByTitle = new Map(
-    promptRows.map((p) => [p.title, p.id] as const)
-  );
+  const promptIdByTitle = new Map(promptRows.map((p) => [p.title, p.id] as const));
 
   for (const pack of packs) {
     // ✅ data sin null: si es free, omitimos priceMx completamente
@@ -192,7 +182,6 @@ async function main() {
       });
     }
 
-    // Aviso si algún título no se encontró
     const missing = pack.promptTitles.filter((t) => !promptIdByTitle.has(t));
     if (missing.length) {
       console.warn("⚠️ pack", pack.slug, "no encontró prompts:", missing);

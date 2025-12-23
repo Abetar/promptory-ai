@@ -12,7 +12,6 @@ async function requireUserId() {
   const userId = (session?.user as any)?.id as string | undefined;
 
   if (!userId) {
-    // Si te pasa esto, te falta inyectar user.id en el callback de NextAuth.
     throw new Error("Unauthorized");
   }
 
@@ -36,7 +35,7 @@ export default async function MisPromptsPage() {
             description: true,
             type: true,
             isFree: true,
-            priceMx: true,
+            // ❌ priceMx: true, // ya no existe
             isPublished: true,
             aiTools: {
               select: {
@@ -121,7 +120,7 @@ export default async function MisPromptsPage() {
                         </span>
                       ) : (
                         <span className="text-xs rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-200">
-                          Premium · ${p.priceMx} MXN
+                          Incluido en pack
                         </span>
                       )}
 

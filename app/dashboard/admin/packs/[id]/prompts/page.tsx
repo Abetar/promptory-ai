@@ -29,7 +29,6 @@ export default async function PackPromptsAdminPage({
         title: true,
         type: true,
         isFree: true,
-        priceMx: true,
         isPublished: true,
       },
     }),
@@ -45,9 +44,7 @@ export default async function PackPromptsAdminPage({
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Pack · Prompts
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Pack · Prompts</h1>
           <p className="mt-1 text-sm text-neutral-400">
             {pack.title} — asigna prompts al pack (sin orden).
           </p>
@@ -62,7 +59,7 @@ export default async function PackPromptsAdminPage({
           </Link>
           <Link
             href={`/dashboard/packs/${pack.slug}`}
-            className="rounded-xl border border-neutral-800 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-900 transition"
+            className="rounded-xl border border-neutral-800 px-4 py-2 text-sm text-neutral-200 hover:bg-neutral-neutral-900 transition"
           >
             Ver pack
           </Link>
@@ -73,7 +70,7 @@ export default async function PackPromptsAdminPage({
         <div className="grid grid-cols-12 gap-0 bg-neutral-950 px-4 py-3 text-xs text-neutral-400">
           <div className="col-span-6">Prompt</div>
           <div className="col-span-2">Tipo</div>
-          <div className="col-span-2">Precio</div>
+          <div className="col-span-2">Acceso</div>
           <div className="col-span-1">Live</div>
           <div className="col-span-1 text-right">En pack</div>
         </div>
@@ -88,12 +85,8 @@ export default async function PackPromptsAdminPage({
                 className="grid grid-cols-12 items-center gap-0 px-4 py-3 bg-neutral-900/30"
               >
                 <div className="col-span-6">
-                  <div className="text-sm font-semibold text-neutral-100">
-                    {p.title}
-                  </div>
-                  <div className="mt-1 text-xs text-neutral-500">
-                    {p.id}
-                  </div>
+                  <div className="text-sm font-semibold text-neutral-100">{p.title}</div>
+                  <div className="mt-1 text-xs text-neutral-500">{p.id}</div>
                 </div>
 
                 <div className="col-span-2 text-sm text-neutral-300">{p.type}</div>
@@ -102,7 +95,7 @@ export default async function PackPromptsAdminPage({
                   {p.isFree ? (
                     <span className="text-emerald-200">Gratis</span>
                   ) : (
-                    <span className="text-amber-200">${p.priceMx} MXN</span>
+                    <span className="text-amber-200">Incluido en pack</span>
                   )}
                 </div>
 

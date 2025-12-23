@@ -84,7 +84,7 @@ export default async function PackDetailPage({
                     </span>
                   ) : (
                     <span className="text-xs rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-1 text-amber-200">
-                      Premium · ${p.priceMx} MXN
+                      Incluido en pack
                     </span>
                   )}
                 </div>
