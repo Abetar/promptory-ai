@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/admin";
 import AiToolForm from "./AiToolForm";
-import { toggleAiToolActiveAction, deleteAiToolAction } from "./actions";
+import AiToolRow from "./AiToolRow";
 
 export const runtime = "nodejs";
 
@@ -10,7 +10,13 @@ export default async function AdminAiToolsPage() {
 
   const aiTools = await prisma.aiTool.findMany({
     orderBy: [{ isActive: "desc" }, { name: "asc" }],
-    select: { id: true, name: true, slug: true, isActive: true, createdAt: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      isActive: true,
+      createdAt: true,
+    },
   });
 
   return (
@@ -36,45 +42,14 @@ export default async function AdminAiToolsPage() {
 
         <div className="divide-y divide-neutral-800">
           {aiTools.map((t) => (
-            <div key={t.id} className="grid grid-cols-12 items-center px-4 py-3 bg-neutral-900/30">
-              <div className="col-span-5">
-                <div className="text-sm font-semibold text-neutral-100">{t.name}</div>
-              </div>
-
-              <div className="col-span-4 text-sm text-neutral-300">{t.slug}</div>
-
-              <div className="col-span-1">
-                {t.isActive ? (
-                  <span className="text-xs rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-emerald-200">
-                    Sí
-                  </span>
-                ) : (
-                  <span className="text-xs rounded-full border border-neutral-700 bg-neutral-900 px-2 py-1 text-neutral-300">
-                    No
-                  </span>
-                )}
-              </div>
-
-              <div className="col-span-12 md:col-span-2 flex flex-wrap md:flex-nowrap items-center justify-start md:justify-end gap-2 mt-3 md:mt-0">
-                <form action={async () => { "use server"; await toggleAiToolActiveAction(t.id); }}>
-                  <button
-                    type="submit"
-                    className="rounded-xl border border-neutral-800 px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900 transition"
-                  >
-                    {t.isActive ? "Desactivar" : "Activar"}
-                  </button>
-                </form>
-
-                <form action={async () => { "use server"; await deleteAiToolAction(t.id); }}>
-                  <button
-                    type="submit"
-                    className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-sm text-red-200 hover:bg-red-500/15 transition"
-                  >
-                    Borrar
-                  </button>
-                </form>
-              </div>
-            </div>
+            <AiToolRow
+              key={t.id}
+              id={t.id}
+              name={t.name}
+              slug={t.slug}
+              isActive={t.isActive}
+              createdAt={t.createdAt.toISOString()}
+            />
           ))}
 
           {aiTools.length === 0 ? (

@@ -79,3 +79,27 @@ export async function deleteAiToolAction(id: string) {
   revalidatePath("/dashboard/admin/ai-tools");
   revalidatePath("/dashboard/prompts");
 }
+
+export async function updateAiToolNameAction(
+  id: string,
+  nameRaw: string
+): Promise<ActionState> {
+  try {
+    await requireAdmin();
+
+    const name = String(nameRaw ?? "").trim();
+    if (!name) return { ok: false, message: "El nombre es obligatorio." };
+
+    await prisma.aiTool.update({
+      where: { id },
+      data: { name },
+    });
+
+    revalidatePath("/dashboard/admin/ai-tools");
+    revalidatePath("/dashboard/prompts"); // filtros y listados donde se usan
+    return { ok: true, message: "Nombre actualizado ✅" };
+  } catch (e) {
+    return { ok: false, message: "No se pudo actualizar el nombre." };
+  }
+}
+
