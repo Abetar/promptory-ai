@@ -1,97 +1,86 @@
 // app/dashboard/upgrade/UpgradeRequestCardClient.tsx
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 type Props = {
-  initialStatus: "pending" | "approved" | "rejected" | "cancelled" | null;
+  mode: "request" | "pro-already";
 };
 
-type ApiOk = { ok: true };
-type ApiErr = { ok: false; message: string };
-
-export default function UpgradeRequestCardClient({ initialStatus }: Props) {
-  const router = useRouter();
-  const [pending, startTransition] = useTransition();
-  const [error, setError] = useState<string | null>(null);
-
-  const label = useMemo(() => {
-    if (initialStatus === "pending") return "Solicitud enviada (pendiente de aprobación)";
-    if (initialStatus === "rejected") return "Solicitud rechazada";
-    if (initialStatus === "cancelled") return "Suscripción cancelada";
-    return null;
-  }, [initialStatus]);
+export default function UpgradeRequestCardClient({ mode }: Props) {
+  const [pending, setPending] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
 
   async function onRequest() {
-    setError(null);
+    setErr(null);
+    setPending(true);
 
-    startTransition(async () => {
-      try {
-        const res = await fetch("/api/subscription/request", { method: "POST" });
-        const data = (await res.json()) as ApiOk | ApiErr;
+    try {
+      // 1) crear request en DB
+      const res = await fetch("/api/subscription/request", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
 
-        if (!res.ok || !data || (data as any).ok === false) {
-          setError((data as ApiErr)?.message ?? "No se pudo solicitar Pro.");
-          return;
-        }
-
-        // refresca server data (status)
-        router.refresh();
-      } catch {
-        setError("No se pudo conectar con el servidor.");
+      if (!res.ok) {
+        setErr(data?.message ?? "No se pudo crear la solicitud.");
+        setPending(false);
+        return;
       }
-    });
+
+      // 2) redirigir a link de pago (MercadoPago o lo que uses)
+      const url = process.env.NEXT_PUBLIC_SUBSCRIPTION_PAYMENT_URL;
+      if (!url) {
+        // si no existe env, al menos no rompemos
+        setErr("Falta NEXT_PUBLIC_SUBSCRIPTION_PAYMENT_URL en .env.local");
+        setPending(false);
+        return;
+      }
+
+      window.location.href = url;
+    } catch {
+      setErr("No se pudo conectar con el servidor.");
+      setPending(false);
+    }
+  }
+
+  function onOpenPaymentLink() {
+    const url = process.env.NEXT_PUBLIC_SUBSCRIPTION_PAYMENT_URL;
+    if (!url) {
+      setErr("Falta NEXT_PUBLIC_SUBSCRIPTION_PAYMENT_URL en .env.local");
+      return;
+    }
+    window.location.href = url;
+  }
+
+  // Si ya es Pro, este botón solo re-abre el link (por si quiere pagar otra vez)
+  if (mode === "pro-already") {
+    return (
+      <button
+        type="button"
+        onClick={onOpenPaymentLink}
+        className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
+      >
+        Abrir link de pago
+      </button>
+    );
   }
 
   return (
-    <div className="space-y-3">
-      {label ? (
-        <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
-          <div className="font-semibold text-amber-200">{label}</div>
-          <p className="mt-1 text-sm text-amber-200/80">
-            Si ya realizaste el pago, un admin lo validará manualmente.
-          </p>
-        </div>
-      ) : null}
+    <div className="flex flex-col gap-2">
+      <button
+        type="button"
+        onClick={onRequest}
+        disabled={pending}
+        className={[
+          "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition",
+          pending
+            ? "bg-neutral-800 text-neutral-400 cursor-not-allowed"
+            : "bg-amber-500 text-neutral-950 hover:opacity-90",
+        ].join(" ")}
+      >
+        {pending ? "Redirigiendo..." : "Solicitar suscripción Pro"}
+      </button>
 
-      {error ? (
-        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-          {error}
-        </div>
-      ) : null}
-
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={onRequest}
-          disabled={pending || initialStatus === "pending"}
-          className={[
-            "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition",
-            pending || initialStatus === "pending"
-              ? "bg-neutral-800 text-neutral-400 cursor-not-allowed"
-              : "bg-amber-500 text-neutral-950 hover:opacity-90",
-          ].join(" ")}
-        >
-          {initialStatus === "pending"
-            ? "Solicitud enviada"
-            : pending
-            ? "Enviando..."
-            : "Solicitar suscripción Pro"}
-        </button>
-
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
-        >
-          Volver
-        </Link>
-      </div>
-
-      <p className="text-xs text-neutral-500">
-        En este MVP: aprobación manual tipo “packs”. (Luego lo conectamos a cobro real.)
-      </p>
+      {err ? <div className="text-xs text-red-300">{err}</div> : null}
     </div>
   );
 }
