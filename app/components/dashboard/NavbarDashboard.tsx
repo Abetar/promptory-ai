@@ -1,9 +1,13 @@
+// app/components/dashboard/NavbarDashboard.tsx
 import Link from "next/link";
 import Image from "next/image";
 
 export default function NavbarDashboard() {
   return (
-    <header className="sticky top-0 z-50 border-b border-neutral-800/80 backdrop-blur" style={{backgroundColor: "#141414"}}>
+    <header
+      className="sticky top-0 z-50 border-b border-neutral-800/80 backdrop-blur"
+      style={{ backgroundColor: "#141414" }}
+    >
       <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-4 py-3">
         {/* Logo + Brand */}
         <Link href="/dashboard" className="flex items-center gap-3">
@@ -33,6 +37,13 @@ export default function NavbarDashboard() {
             className="rounded-xl px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900 transition"
           >
             Prompts
+          </Link>
+
+          <Link
+            href="/dashboard/tools"
+            className="rounded-xl px-3 py-2 text-sm text-neutral-200 hover:bg-neutral-900 transition"
+          >
+            Tools
           </Link>
 
           <Link

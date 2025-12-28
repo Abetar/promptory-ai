@@ -28,6 +28,12 @@ model User {
   // ✅ Historial compras de packs
   packPurchases PackPurchase[]
 
+  // ✅ Runs de Prompt Optimizer
+  promptOptimizerRuns PromptOptimizerRun[]
+
+  subscription          UserSubscription?
+  subscriptionPurchases SubscriptionPurchase[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -253,6 +259,109 @@ model PackPurchase {
 
   @@index([userId])
   @@index([packId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+enum ToolTargetAI {
+  chatgpt
+  claude
+  gemini
+  deepseek
+}
+
+/**
+ * ✅ NUEVO: plan para runs
+ */
+enum OptimizerPlan {
+  free
+  pro
+}
+
+/**
+ * ✅ NUEVO: motor para runs
+ */
+enum OptimizerEngine {
+  mock
+  openai
+}
+
+model PromptOptimizerRun {
+  id       String       @id @default(cuid())
+  userId   String
+  targetAI ToolTargetAI @default(chatgpt)
+
+  // ✅ Para evitar deuda técnica (auditable)
+  plan   OptimizerPlan   @default(free)
+  engine OptimizerEngine @default(mock)
+  model  String?
+
+  input  String
+  output String
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@index([plan])
+  @@index([engine])
+}
+
+enum SubscriptionStatus {
+  pending
+  approved
+  rejected
+  cancelled
+}
+
+model UserSubscription {
+  id String @id @default(cuid())
+
+  userId String             @unique
+  status SubscriptionStatus @default(pending)
+
+  // vigencia (si decides mensual/anual)
+  startsAt DateTime  @default(now())
+  endsAt   DateTime? // null = “indefinida” (MVP) o hasta que canceles
+
+  // útil para auditoría/soporte
+  note String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+  @@index([endsAt])
+}
+
+model SubscriptionPurchase {
+  id String @id @default(cuid())
+
+  userId   String
+  amountMx Int
+  status   SubscriptionStatus @default(pending)
+
+  // conciliación manual (MercadoPago)
+  mpPaymentId String?
+  note        String?
+
+  approvedAt DateTime?
+  rejectedAt DateTime?
+
+  // snapshot para auditoría
+  startsAt DateTime? // si el admin aprueba puede setear inicio/fin
+  endsAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
   @@index([status])
   @@index([createdAt])
 }
