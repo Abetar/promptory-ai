@@ -85,7 +85,7 @@ export default async function SolicitarPromptPage() {
 
         <div>
           <label className="text-sm text-neutral-300">
-            ¿Para qué lo necesitas?
+            Descripción del prompt.
           </label>
           <textarea
             name="description"
