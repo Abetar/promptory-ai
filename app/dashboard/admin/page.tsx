@@ -15,14 +15,19 @@ function Badge({ children }: { children: React.ReactNode }) {
 export default async function AdminHomePage() {
   await requireAdmin();
 
-  // ✅ Pendientes de suscripción (para badge rápido)
+  // ✅ Pendientes de suscripción
   const pendingSubs = await prisma.subscriptionPurchase.count({
     where: { status: "pending" },
   });
 
-  // ✅ Pendientes de packs (si quieres también mostrar badge aquí)
+  // ✅ Pendientes de packs
   const pendingPackPurchases = await prisma.packPurchase.count({
     where: { status: "pending" },
+  });
+
+  // ✅ NUEVO: Pendientes de prompt requests
+  const pendingRequests = await prisma.promptRequest.count({
+    where: { resolvedAt: null },
   });
 
   return (
@@ -61,7 +66,6 @@ export default async function AdminHomePage() {
           </div>
         </Link>
 
-        {/* ✅ Packs */}
         <Link
           href="/dashboard/admin/packs"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
@@ -75,11 +79,17 @@ export default async function AdminHomePage() {
           </div>
         </Link>
 
+        {/* ✅ Requests con badge */}
         <Link
           href="/dashboard/admin/requests"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">Requests</div>
+          <div className="text-sm font-semibold text-neutral-100">
+            Requests
+            {pendingRequests > 0 ? (
+              <Badge>{pendingRequests} nuevo(s)</Badge>
+            ) : null}
+          </div>
           <p className="mt-2 text-sm text-neutral-400">
             Solicitudes de nuevos prompts enviadas por usuarios.
           </p>
@@ -114,14 +124,15 @@ export default async function AdminHomePage() {
           </div>
         </Link>
 
-        {/* ✅ Compras packs */}
         <Link
           href="/dashboard/admin/purchases"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
           <div className="text-sm font-semibold text-neutral-100">
             Compras
-            {pendingPackPurchases > 0 ? <Badge>{pendingPackPurchases} pendiente(s)</Badge> : null}
+            {pendingPackPurchases > 0 ? (
+              <Badge>{pendingPackPurchases} pendiente(s)</Badge>
+            ) : null}
           </div>
           <p className="mt-2 text-sm text-neutral-400">
             Validar pagos y desbloquear packs.
@@ -131,14 +142,15 @@ export default async function AdminHomePage() {
           </div>
         </Link>
 
-        {/* ✅ NUEVO: Suscripciones Pro */}
         <Link
           href="/dashboard/admin/subscriptions"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
           <div className="text-sm font-semibold text-neutral-100">
             Suscripciones
-            {pendingSubs > 0 ? <Badge>{pendingSubs} pendiente(s)</Badge> : null}
+            {pendingSubs > 0 ? (
+              <Badge>{pendingSubs} pendiente(s)</Badge>
+            ) : null}
           </div>
           <p className="mt-2 text-sm text-neutral-400">
             Aprobar / rechazar solicitudes Pro (validación manual).

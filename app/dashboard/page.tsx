@@ -2,6 +2,7 @@ import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
 import { hasActiveSubscription } from "@/lib/subscription";
+import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
 
@@ -31,6 +32,14 @@ function LockedPill() {
   );
 }
 
+function Badge({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="ml-2 inline-flex items-center rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[11px] font-semibold text-amber-200">
+      {children}
+    </span>
+  );
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
@@ -43,6 +52,14 @@ export default async function DashboardPage() {
 
   // ✅ Pro real (DB + fallback env según tu subscription.ts)
   const isPro = await hasActiveSubscription();
+
+  // ✅ NUEVO: requests del usuario (pendientes = en revisión)
+  const userEmail = session?.user?.email ?? null;
+  const pendingMyRequests = userEmail
+    ? await prisma.promptRequest.count({
+        where: { userEmail, resolvedAt: null },
+      })
+    : 0;
 
   return (
     <div className="space-y-8">
@@ -58,9 +75,20 @@ export default async function DashboardPage() {
 
           {!isPro ? (
             <div className="text-xs text-neutral-500">
-              Tip: con <span className="text-neutral-300">Pro</span> tienes acceso ilimitado a herramientas premium.
+              Tip: con <span className="text-neutral-300">Pro</span> tienes
+              acceso ilimitado a herramientas premium.
             </div>
           ) : null}
+
+          {/* ✅ Micro-link a Mis requests */}
+          <div className="text-xs">
+            <Link
+              href="/dashboard/requests"
+              className="text-neutral-400 hover:text-neutral-200 transition"
+            >
+              Ver mis requests →
+            </Link>
+          </div>
         </div>
 
         {/* ✅ Botón Admin solo visible para admins */}
@@ -101,7 +129,8 @@ export default async function DashboardPage() {
                 Desbloquea Promptory Pro
               </div>
               <p className="mt-1 text-sm text-amber-200/80">
-                Prompt Optimizer ilimitado, acceso anticipado a nuevas herramientas y cero límites diarios.
+                Prompt Optimizer ilimitado, acceso anticipado a nuevas
+                herramientas y cero límites diarios.
               </p>
             </div>
 
@@ -145,9 +174,7 @@ export default async function DashboardPage() {
           href="/dashboard/mis-prompts"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">
-            Mis prompts
-          </div>
+          <div className="text-sm font-semibold text-neutral-100">Mis prompts</div>
           <p className="mt-2 text-sm text-neutral-400">
             Favoritos y prompts guardados para acceso rápido.
           </p>
@@ -175,14 +202,31 @@ export default async function DashboardPage() {
           href="/dashboard/compras"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">
-            Mis compras
-          </div>
+          <div className="text-sm font-semibold text-neutral-100">Mis compras</div>
           <p className="mt-2 text-sm text-neutral-400">
             Revisa el estado de tus packs premium.
           </p>
           <div className="mt-4 inline-flex rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition">
             Ver historial →
+          </div>
+        </Link>
+
+        {/* ✅ Mis requests + badge */}
+        <Link
+          href="/dashboard/requests"
+          className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
+        >
+          <div className="text-sm font-semibold text-neutral-100">
+            Mis requests
+            {pendingMyRequests > 0 ? (
+              <Badge>{pendingMyRequests} en revisión</Badge>
+            ) : null}
+          </div>
+          <p className="mt-2 text-sm text-neutral-400">
+            Da seguimiento a tus solicitudes de nuevos prompts.
+          </p>
+          <div className="mt-4 inline-flex rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition">
+            Ver estado →
           </div>
         </Link>
       </section>

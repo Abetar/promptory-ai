@@ -63,9 +63,12 @@ export default async function AdminRequestsPage() {
               >
                 <div className="col-span-12 md:col-span-5">
                   <div className="flex items-center gap-2">
-                    <div className="text-sm font-semibold text-neutral-100">
+                    <Link
+                      href={`/dashboard/admin/requests/${r.id}`}
+                      className="text-sm font-semibold text-neutral-100 hover:underline"
+                    >
                       {r.title}
-                    </div>
+                    </Link>
 
                     {isResolved ? (
                       <span className="text-xs rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-emerald-200">

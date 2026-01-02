@@ -20,6 +20,7 @@ export async function toggleResolvedAction(requestId: string) {
   });
 
   revalidatePath("/dashboard/admin/requests");
+  revalidatePath(`/dashboard/admin/requests/${requestId}`);
 }
 
 export async function deleteRequestAction(requestId: string) {
@@ -28,4 +29,5 @@ export async function deleteRequestAction(requestId: string) {
   await prisma.promptRequest.delete({ where: { id: requestId } });
 
   revalidatePath("/dashboard/admin/requests");
+  revalidatePath(`/dashboard/admin/requests/${requestId}`);
 }
