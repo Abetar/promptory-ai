@@ -68,7 +68,9 @@ export default async function PromptDetailPage({
           )}
         </div>
 
-        <h1 className="text-2xl font-semibold tracking-tight">{prompt.title}</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">
+          {prompt.title}
+        </h1>
         <p className="text-sm text-neutral-400">{prompt.description}</p>
       </div>
 
@@ -76,7 +78,15 @@ export default async function PromptDetailPage({
       <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-semibold text-neutral-100">Prompt</h2>
-          {!locked ? <CopyPromptButton text={text} /> : null}
+
+          {!locked ? (
+            <CopyPromptButton
+              text={text}
+              promptId={prompt.id}
+              title={prompt.title}
+              source="dashboard/prompts/detail:full"
+            />
+          ) : null}
         </div>
 
         <pre className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-neutral-200">
@@ -100,8 +110,8 @@ export default async function PromptDetailPage({
               </p>
             ) : packs.length > 1 ? (
               <p className="mt-2 text-xs text-amber-100/70">
-                Disponible en <span className="font-semibold">{packs.length}</span>{" "}
-                packs.
+                Disponible en{" "}
+                <span className="font-semibold">{packs.length}</span> packs.
               </p>
             ) : null}
           </div>
