@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { hasActiveSubscription } from "@/lib/subscription";
+import { logEvent } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -141,6 +142,7 @@ CHECKLIST DE CALIDAD:
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
+  const email = session?.user?.email ?? null;
 
   if (!userId) {
     return NextResponse.json(
@@ -199,7 +201,7 @@ export async function POST(req: Request) {
   try {
     if (engine === "openai") {
       model = OPENAI_MODEL;
-      output = await runOpenAI(input, targetAI); // ✅ 2 args
+      output = await runOpenAI(input, targetAI);
     } else {
       output = buildMockOutput(input, targetAI);
     }
@@ -211,6 +213,7 @@ export async function POST(req: Request) {
 
   const latencyMs = Date.now() - t0;
 
+  // ✅ Guarda run (fuente de verdad)
   await prisma.promptOptimizerRun.create({
     data: {
       userId,
@@ -220,6 +223,22 @@ export async function POST(req: Request) {
       model,
       input,
       output,
+    },
+  });
+
+  // ✅ Analytics: tool usage real (no guarda input/output)
+  logEvent({
+    userId,
+    email,
+    event: "optimizer.run",
+    entityType: "tool",
+    entityId: "prompt-optimizer",
+    meta: {
+      plan,
+      engine,
+      targetAI,
+      latencyMs,
+      model,
     },
   });
 

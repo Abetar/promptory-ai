@@ -68,6 +68,14 @@ export default async function AdminHomePage() {
     },
   });
 
+  // ✅ NUEVO: runs del Prompt Optimizer hoy
+  const optimizerRunsToday = await prisma.auditEvent.count({
+    where: {
+      event: "optimizer.run",
+      createdAt: { gte: startOfToday, lt: startOfTomorrow },
+    },
+  });
+
   // Usuarios únicos con login hoy (por emailSnapshot)
   const loginUsersToday = await prisma.auditEvent.findMany({
     where: {
@@ -81,8 +89,7 @@ export default async function AdminHomePage() {
 
   const activeUsersToday = loginUsersToday.length;
 
-  // ✅ Top prompts copiados hoy (por entityId)
-  // Nota: en Prisma, orderBy count suele necesitar un campo específico, no _all
+  // Top prompts copiados hoy (por entityId)
   const topCopies = await prisma.auditEvent.groupBy({
     by: ["entityId"],
     where: {
@@ -270,7 +277,8 @@ export default async function AdminHomePage() {
           </Link>
         </div>
 
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-4">
+          {/* Usuarios activos */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-semibold text-neutral-100">
@@ -288,6 +296,7 @@ export default async function AdminHomePage() {
             </p>
           </div>
 
+          {/* Eventos hoy */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-semibold text-neutral-100">
@@ -305,6 +314,25 @@ export default async function AdminHomePage() {
             </p>
           </div>
 
+          {/* Optimizer runs hoy */}
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-sm font-semibold text-neutral-100">
+                Runs Optimizer (hoy)
+              </div>
+              <Pill>optimizer.run</Pill>
+            </div>
+
+            <div className="mt-3 text-3xl font-semibold text-neutral-100">
+              {optimizerRunsToday}
+            </div>
+
+            <p className="mt-2 text-sm text-neutral-400">
+              Veces que se ejecutó el Prompt Optimizer hoy.
+            </p>
+          </div>
+
+          {/* Top prompts copiados */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm font-semibold text-neutral-100">
@@ -349,6 +377,7 @@ export default async function AdminHomePage() {
           </div>
         </div>
 
+        {/* Últimos logins */}
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
