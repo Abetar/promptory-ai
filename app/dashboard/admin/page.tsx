@@ -23,17 +23,14 @@ function Pill({ children }: { children: React.ReactNode }) {
 export default async function AdminHomePage() {
   await requireAdmin();
 
-  // ✅ Pendientes de suscripción
   const pendingSubs = await prisma.subscriptionPurchase.count({
     where: { status: "pending" },
   });
 
-  // ✅ Pendientes de packs
   const pendingPackPurchases = await prisma.packPurchase.count({
     where: { status: "pending" },
   });
 
-  // ✅ Pendientes de prompt requests
   const pendingRequests = await prisma.promptRequest.count({
     where: { resolvedAt: null },
   });
@@ -61,14 +58,10 @@ export default async function AdminHomePage() {
     0
   );
 
-  // Total eventos hoy
   const eventsToday = await prisma.auditEvent.count({
-    where: {
-      createdAt: { gte: startOfToday, lt: startOfTomorrow },
-    },
+    where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } },
   });
 
-  // ✅ NUEVO: runs del Prompt Optimizer hoy
   const optimizerRunsToday = await prisma.auditEvent.count({
     where: {
       event: "optimizer.run",
@@ -76,7 +69,6 @@ export default async function AdminHomePage() {
     },
   });
 
-  // Usuarios únicos con login hoy (por emailSnapshot)
   const loginUsersToday = await prisma.auditEvent.findMany({
     where: {
       event: "auth.login",
@@ -89,7 +81,6 @@ export default async function AdminHomePage() {
 
   const activeUsersToday = loginUsersToday.length;
 
-  // Top prompts copiados hoy (por entityId)
   const topCopies = await prisma.auditEvent.groupBy({
     by: ["entityId"],
     where: {
@@ -115,20 +106,16 @@ export default async function AdminHomePage() {
 
   const promptTitleById = new Map(prompts.map((p) => [p.id, p.title]));
 
-  // Últimos logins
   const recentLogins = await prisma.auditEvent.findMany({
     where: { event: "auth.login" },
     orderBy: { createdAt: "desc" },
     take: 8,
-    select: {
-      id: true,
-      emailSnapshot: true,
-      createdAt: true,
-    },
+    select: { id: true, emailSnapshot: true, createdAt: true },
   });
 
   return (
-    <div className="space-y-8">
+    // ✅ Evita el "espacio blanco" por overflow horizontal en mobile
+    <div className="space-y-8 overflow-x-hidden">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
         <p className="mt-1 text-sm text-neutral-400">
@@ -177,7 +164,6 @@ export default async function AdminHomePage() {
           </div>
         </Link>
 
-        {/* Requests con badge */}
         <Link
           href="/dashboard/admin/requests"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
@@ -246,9 +232,7 @@ export default async function AdminHomePage() {
         >
           <div className="text-sm font-semibold text-neutral-100">
             Suscripciones
-            {pendingSubs > 0 ? (
-              <Badge>{pendingSubs} pendiente(s)</Badge>
-            ) : null}
+            {pendingSubs > 0 ? <Badge>{pendingSubs} pendiente(s)</Badge> : null}
           </div>
           <p className="mt-2 text-sm text-neutral-400">
             Aprobar / rechazar solicitudes Pro (validación manual).
@@ -262,26 +246,29 @@ export default async function AdminHomePage() {
       {/* ✅ Uso reciente */}
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">Uso reciente</h2>
+          {/* ✅ min-w-0 evita overflow por textos largos en flex */}
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold tracking-tight">
+              Uso reciente
+            </h2>
             <p className="mt-1 text-sm text-neutral-400">
               Señales rápidas para validar actividad real (hoy).
             </p>
           </div>
 
+          {/* ✅ Evita que este link empuje el layout */}
           <Link
             href="/dashboard/admin/events"
-            className="text-sm text-neutral-300 hover:text-neutral-100 transition"
+            className="shrink-0 whitespace-nowrap text-sm text-neutral-300 hover:text-neutral-100 transition"
           >
             Ver logs →
           </Link>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-4">
-          {/* Usuarios activos */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-semibold text-neutral-100">
+              <div className="min-w-0 text-sm font-semibold text-neutral-100">
                 Usuarios activos hoy
               </div>
               <Pill>auth.login</Pill>
@@ -296,10 +283,9 @@ export default async function AdminHomePage() {
             </p>
           </div>
 
-          {/* Eventos hoy */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-semibold text-neutral-100">
+              <div className="min-w-0 text-sm font-semibold text-neutral-100">
                 Eventos hoy
               </div>
               <Pill>AuditEvent</Pill>
@@ -314,10 +300,9 @@ export default async function AdminHomePage() {
             </p>
           </div>
 
-          {/* Optimizer runs hoy */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-semibold text-neutral-100">
+              <div className="min-w-0 text-sm font-semibold text-neutral-100">
                 Runs Optimizer (hoy)
               </div>
               <Pill>optimizer.run</Pill>
@@ -332,10 +317,9 @@ export default async function AdminHomePage() {
             </p>
           </div>
 
-          {/* Top prompts copiados */}
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-sm font-semibold text-neutral-100">
+              <div className="min-w-0 text-sm font-semibold text-neutral-100">
                 Top prompts copiados (hoy)
               </div>
               <Pill>prompt.copy</Pill>
@@ -377,10 +361,9 @@ export default async function AdminHomePage() {
           </div>
         </div>
 
-        {/* Últimos logins */}
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
           <div className="flex items-center justify-between gap-3">
-            <div>
+            <div className="min-w-0">
               <div className="text-sm font-semibold text-neutral-100">
                 Últimos logins
               </div>
@@ -391,7 +374,7 @@ export default async function AdminHomePage() {
 
             <Link
               href="/dashboard/admin/events"
-              className="rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
+              className="shrink-0 whitespace-nowrap rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
             >
               Ver detalle →
             </Link>

@@ -33,7 +33,9 @@ export default async function AdminEventsPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Admin · Events</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Admin · Events
+          </h1>
           <p className="mt-1 text-sm text-neutral-400">
             Logs simples para validar uso real (login, copy, tools, etc.).
           </p>
@@ -53,63 +55,77 @@ export default async function AdminEventsPage() {
             Aún no hay eventos
           </div>
           <p className="mt-2 text-sm text-neutral-400">
-            Cuando alguien inicie sesión, verás aquí el evento <Pill>auth.login</Pill>.
+            Cuando alguien inicie sesión, verás aquí el evento{" "}
+            <Pill>auth.login</Pill>.
           </p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-neutral-800">
-          <table className="w-full text-left text-sm">
-            <thead className="bg-neutral-900/60 text-neutral-300">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Fecha</th>
-                <th className="px-4 py-3 font-semibold">Evento</th>
-                <th className="px-4 py-3 font-semibold">Usuario</th>
-                <th className="px-4 py-3 font-semibold">Entidad</th>
-                <th className="px-4 py-3 font-semibold">Meta</th>
-              </tr>
-            </thead>
-
-            <tbody className="divide-y divide-neutral-800 bg-neutral-900/30">
-              {events.map((e) => (
-                <tr key={e.id} className="hover:bg-neutral-900/50 transition">
-                  <td className="px-4 py-3 text-neutral-300">
-                    {new Date(e.createdAt).toLocaleString("es-MX")}
-                  </td>
-
-                  <td className="px-4 py-3">
-                    <Pill>{e.event}</Pill>
-                  </td>
-
-                  <td className="px-4 py-3 text-neutral-200">
-                    {e.emailSnapshot ?? "—"}
-                  </td>
-
-                  <td className="px-4 py-3 text-neutral-200">
-                    {e.entityType ? (
-                      <span className="inline-flex items-center gap-2">
-                        <Pill>{e.entityType}</Pill>
-                        <span className="text-neutral-400">
-                          {e.entityId ?? ""}
-                        </span>
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
-
-                  <td className="px-4 py-3 text-neutral-400">
-                    {e.meta ? (
-                      <span className="line-clamp-2">
-                        {JSON.stringify(e.meta)}
-                      </span>
-                    ) : (
-                      "—"
-                    )}
-                  </td>
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30">
+          {/* ✅ Scroll horizontal en mobile/tablet */}
+          <div className="overflow-x-auto">
+            <table className="min-w-[900px] w-full text-left text-sm">
+              <thead className="bg-neutral-900/60 text-neutral-300">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Fecha</th>
+                  <th className="px-4 py-3 font-semibold">Evento</th>
+                  <th className="px-4 py-3 font-semibold">Usuario</th>
+                  <th className="px-4 py-3 font-semibold">Entidad</th>
+                  <th className="px-4 py-3 font-semibold">Meta</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody className="divide-y divide-neutral-800">
+                {events.map((e) => (
+                  <tr
+                    key={e.id}
+                    className="hover:bg-neutral-900/50 transition"
+                  >
+                    <td className="px-4 py-3 text-neutral-300 whitespace-nowrap">
+                      {new Date(e.createdAt).toLocaleString("es-MX")}
+                    </td>
+
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <Pill>{e.event}</Pill>
+                    </td>
+
+                    <td className="px-4 py-3 text-neutral-200">
+                      <div className="max-w-[260px] truncate">
+                        {e.emailSnapshot ?? "—"}
+                      </div>
+                    </td>
+
+                    <td className="px-4 py-3 text-neutral-200">
+                      {e.entityType ? (
+                        <div className="flex items-center gap-2">
+                          <Pill>{e.entityType}</Pill>
+                          <span className="max-w-[260px] truncate text-neutral-400">
+                            {e.entityId ?? ""}
+                          </span>
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+
+                    <td className="px-4 py-3 text-neutral-400">
+                      {e.meta ? (
+                        <div className="max-w-[520px] line-clamp-2">
+                          {JSON.stringify(e.meta)}
+                        </div>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* hint opcional en mobile */}
+          <div className="border-t border-neutral-800 px-4 py-2 text-xs text-neutral-500 md:hidden">
+            Tip: puedes deslizar horizontalmente →
+          </div>
         </div>
       )}
     </div>
