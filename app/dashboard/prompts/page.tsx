@@ -13,6 +13,12 @@ export const runtime = "nodejs";
 type PriceFilter = "all" | "free" | "premium";
 type SortFilter = "new";
 
+// ✅ NEW badge helper (3 días)
+function isNewPrompt(createdAt: Date, days = 3) {
+  const ms = days * 24 * 60 * 60 * 1000;
+  return Date.now() - createdAt.getTime() <= ms;
+}
+
 export default async function PromptsPage({
   searchParams,
 }: {
@@ -74,6 +80,9 @@ export default async function PromptsPage({
           const aiBadges = p.aiTools.map((x) => x.aiTool).slice(0, 3);
           const locked = !p.isFree;
 
+          // ✅ NEW badge: visible solo por 3 días
+          const showNew = p.createdAt ? isNewPrompt(p.createdAt, 3) : false;
+
           return (
             <div
               key={p.id}
@@ -86,6 +95,13 @@ export default async function PromptsPage({
                 </span>
 
                 <div className="flex items-center gap-2">
+                  {/* ✅ NEW pill */}
+                  {showNew ? (
+                    <span className="text-xs rounded-full border border-sky-500/30 bg-sky-500/10 px-2 py-1 text-sky-200">
+                      Nuevo
+                    </span>
+                  ) : null}
+
                   {p.isFree ? (
                     <span className="text-xs rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-emerald-200">
                       Gratis
