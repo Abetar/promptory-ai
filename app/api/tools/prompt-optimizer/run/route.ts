@@ -139,10 +139,16 @@ CHECKLIST DE CALIDAD:
   return text || buildMockOutput(input, targetAI);
 }
 
+function buildInputPreview(input: string, max = 240) {
+  const clean = input.replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  return clean.slice(0, max).trimEnd() + "…";
+}
+
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
-  const email = session?.user?.email ?? null;
+  const email = session?.user?.email ?? undefined;
 
   if (!userId) {
     return NextResponse.json(
@@ -213,8 +219,7 @@ export async function POST(req: Request) {
 
   const latencyMs = Date.now() - t0;
 
-  // ✅ Guarda run (fuente de verdad)
-  await prisma.promptOptimizerRun.create({
+  const run = await prisma.promptOptimizerRun.create({
     data: {
       userId,
       targetAI,
@@ -224,21 +229,32 @@ export async function POST(req: Request) {
       input,
       output,
     },
+    select: { id: true },
   });
 
-  // ✅ Analytics: tool usage real (no guarda input/output)
-  logEvent({
+  // ===========================
+  // ✅ Audit event: optimizer.run
+  // ===========================
+  const storeFull =
+    String(process.env.AUDIT_STORE_OPTIMIZER_INPUT ?? "").toLowerCase() ===
+    "true";
+
+  await logEvent({
     userId,
-    email,
+    email: email ?? null,
     event: "optimizer.run",
     entityType: "tool",
-    entityId: "prompt-optimizer",
+    entityId: run.id,
     meta: {
+      runId: run.id,
+      targetAI,
       plan,
       engine,
-      targetAI,
+      model: model ?? undefined,
       latencyMs,
-      model,
+      inputLen: input.length,
+      inputPreview: buildInputPreview(input, 240),
+      ...(storeFull ? { fullInput: input } : {}),
     },
   });
 
