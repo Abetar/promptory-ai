@@ -2,7 +2,11 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import { grantProAction, revokeProAction } from "./actions";
+import {
+  grantProBasicAction,
+  grantProUnlimitedAction,
+  revokeProAction,
+} from "./actions";
 
 export const runtime = "nodejs";
 
@@ -25,6 +29,7 @@ export default async function AdminUsersPage() {
       subscription: {
         select: {
           status: true,
+          tier: true, // ✅ nuevo
           endsAt: true,
           startsAt: true,
         },
@@ -42,11 +47,9 @@ export default async function AdminUsersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">
-            Admin · Usuarios
-          </h1>
+          <h1 className="text-2xl font-semibold tracking-tight">Admin · Usuarios</h1>
           <p className="mt-1 text-sm text-neutral-400">
-            Lista de cuentas registradas (Google login) + control Pro manual.
+            Lista de cuentas registradas (Google login) + control manual de tiers (Basic / Unlimited).
           </p>
         </div>
 
@@ -59,13 +62,12 @@ export default async function AdminUsersPage() {
       </div>
 
       <div className="rounded-2xl border border-neutral-800 overflow-hidden">
-        {/* scroll horizontal en mobile */}
         <div className="w-full overflow-x-auto">
-          <div className="min-w-[920px]">
+          <div className="min-w-[980px]">
             {/* Header */}
             <div className="grid grid-cols-12 gap-0 bg-neutral-950 px-4 py-3 text-xs text-neutral-400">
               <div className="col-span-4">Usuario</div>
-              <div className="col-span-2">Pro</div>
+              <div className="col-span-2">Suscripción</div>
               <div className="col-span-1">Guardados</div>
               <div className="col-span-1">Packs</div>
               <div className="col-span-2 text-right">Creado</div>
@@ -76,21 +78,28 @@ export default async function AdminUsersPage() {
             <div className="divide-y divide-neutral-800">
               {users.map((u) => {
                 const sub = u.subscription;
-                const isPro =
-                  sub?.status === "approved" &&
-                  isActiveByDates(sub.endsAt ?? null);
 
-                const proLabel = !sub
+                const isApprovedActive =
+                  sub?.status === "approved" && isActiveByDates(sub.endsAt ?? null);
+
+                // En tu app, pending cuenta como acceso provisional (trust-first)
+                const isPending = sub?.status === "pending";
+                const hasAnyPro = isApprovedActive || isPending;
+
+                const tier = sub?.tier ?? "basic";
+                const isUnlimited = hasAnyPro && tier === "unlimited";
+
+                const statusLabel = !sub
                   ? "No"
                   : sub.status === "approved"
                   ? isActiveByDates(sub.endsAt ?? null)
-                    ? "Activo"
+                    ? "Approved"
                     : "Vencido"
                   : sub.status === "pending"
-                  ? "Pendiente"
+                  ? "Pending (provisional)"
                   : sub.status === "rejected"
-                  ? "Rechazado"
-                  : "Cancelado";
+                  ? "Rejected"
+                  : "Cancelled";
 
                 return (
                   <div
@@ -103,9 +112,16 @@ export default async function AdminUsersPage() {
                           {u.email ?? "sin email"}
                         </div>
 
-                        {isPro ? (
-                          <span className="text-[11px] rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-emerald-200">
-                            PRO
+                        {hasAnyPro ? (
+                          <span
+                            className={[
+                              "text-[11px] rounded-full border px-2 py-0.5",
+                              isUnlimited
+                                ? "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200"
+                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+                            ].join(" ")}
+                          >
+                            {isUnlimited ? "PRO UNLIMITED" : "PRO BASIC"}
                           </span>
                         ) : null}
                       </div>
@@ -113,7 +129,9 @@ export default async function AdminUsersPage() {
                       {u.name ? (
                         <div className="text-xs text-neutral-500">{u.name}</div>
                       ) : null}
+
                       <div className="text-[11px] text-neutral-600">{u.id}</div>
+
                       <div className="mt-2 flex flex-wrap gap-2">
                         <Link
                           href={`/dashboard/admin/users/${u.id}/guardados`}
@@ -139,11 +157,26 @@ export default async function AdminUsersPage() {
                     </div>
 
                     <div className="col-span-2">
-                      {isPro ? (
+                      {hasAnyPro ? (
                         <div className="space-y-1">
-                          <span className="inline-flex text-xs rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-emerald-200">
-                            {proLabel}
+                          <span
+                            className={[
+                              "inline-flex text-xs rounded-full border px-2 py-1",
+                              isUnlimited
+                                ? "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200"
+                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+                            ].join(" ")}
+                          >
+                            {statusLabel}
                           </span>
+
+                          <div className="text-[11px] text-neutral-500">
+                            tier:{" "}
+                            <span className="text-neutral-300">
+                              {tier === "unlimited" ? "unlimited" : "basic"}
+                            </span>
+                          </div>
+
                           {sub?.endsAt ? (
                             <div className="text-[11px] text-neutral-500">
                               vence: {sub.endsAt.toISOString().slice(0, 10)}
@@ -156,7 +189,7 @@ export default async function AdminUsersPage() {
                         </div>
                       ) : (
                         <span className="inline-flex text-xs rounded-full border border-neutral-700 bg-neutral-900 px-2 py-1 text-neutral-300">
-                          {proLabel}
+                          {statusLabel}
                         </span>
                       )}
                     </div>
@@ -174,34 +207,69 @@ export default async function AdminUsersPage() {
                     </div>
 
                     <div className="col-span-2 flex justify-end gap-2">
-                      {!isPro ? (
-                        <form
-                          action={async () => {
-                            "use server";
-                            await grantProAction(u.id);
-                          }}
-                        >
-                          <button
-                            type="submit"
-                            className="rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-950 hover:opacity-90 transition"
+                      {!hasAnyPro ? (
+                        <>
+                          <form
+                            action={async () => {
+                              "use server";
+                              await grantProBasicAction(u.id);
+                            }}
                           >
-                            Dar Pro
-                          </button>
-                        </form>
+                            <button
+                              type="submit"
+                              className="rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-950 hover:opacity-90 transition"
+                            >
+                              Dar Basic
+                            </button>
+                          </form>
+
+                          <form
+                            action={async () => {
+                              "use server";
+                              await grantProUnlimitedAction(u.id);
+                            }}
+                          >
+                            <button
+                              type="submit"
+                              className="rounded-xl bg-fuchsia-500 px-3 py-2 text-xs font-semibold text-neutral-950 hover:opacity-90 transition"
+                            >
+                              Dar Unlimited
+                            </button>
+                          </form>
+                        </>
                       ) : (
-                        <form
-                          action={async () => {
-                            "use server";
-                            await revokeProAction(u.id);
-                          }}
-                        >
-                          <button
-                            type="submit"
-                            className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/15 transition"
+                        <>
+                          {!isUnlimited ? (
+                            <form
+                              action={async () => {
+                                "use server";
+                                await grantProUnlimitedAction(u.id);
+                              }}
+                            >
+                              <button
+                                type="submit"
+                                className="rounded-xl bg-fuchsia-500 px-3 py-2 text-xs font-semibold text-neutral-950 hover:opacity-90 transition"
+                                title="Subir a Unlimited"
+                              >
+                                Subir a Unlimited
+                              </button>
+                            </form>
+                          ) : null}
+
+                          <form
+                            action={async () => {
+                              "use server";
+                              await revokeProAction(u.id);
+                            }}
                           >
-                            Revocar
-                          </button>
-                        </form>
+                            <button
+                              type="submit"
+                              className="rounded-xl border border-red-500/40 bg-red-500/10 px-3 py-2 text-xs font-semibold text-red-200 hover:bg-red-500/15 transition"
+                            >
+                              Revocar
+                            </button>
+                          </form>
+                        </>
                       )}
                     </div>
                   </div>

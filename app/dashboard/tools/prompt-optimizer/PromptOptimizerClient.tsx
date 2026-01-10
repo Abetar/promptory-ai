@@ -13,6 +13,9 @@ type ApiOk = {
   model: string | null;
   latencyMs: number;
   output: string;
+
+  // opcional (si viene del backend)
+  subscriptionTier?: "none" | "basic" | "unlimited";
 };
 
 type ApiErr = {
@@ -44,12 +47,12 @@ export default function PromptOptimizerClient() {
     engine?: string;
     model?: string | null;
     latencyMs?: number;
+    subscriptionTier?: "none" | "basic" | "unlimited";
   } | null>(null);
 
   const [state, setState] = useState<ApiErr | null>(null);
   const [pending, startTransition] = useTransition();
 
-  // ✅ NUEVO: estado de copiado
   const [copied, setCopied] = useState(false);
 
   // usage
@@ -70,7 +73,7 @@ export default function PromptOptimizerClient() {
     setOptimized("");
     setMeta(null);
     setState(null);
-    setCopied(false); // ✅ NUEVO
+    setCopied(false);
   }
 
   async function fetchUsage() {
@@ -85,9 +88,7 @@ export default function PromptOptimizerClient() {
 
       if (!res.ok || !("ok" in data) || data.ok === false) {
         setUsage(null);
-        setUsageErr(
-          (data as UsageErr)?.message ?? "No se pudo cargar tu uso."
-        );
+        setUsageErr((data as UsageErr)?.message ?? "No se pudo cargar tu uso.");
         return;
       }
 
@@ -104,15 +105,19 @@ export default function PromptOptimizerClient() {
     fetchUsage();
   }, []);
 
-  // ✅ NUEVO: si cambia el output, apaga el estado de copiado
   useEffect(() => {
     setCopied(false);
   }, [optimized]);
 
+  // si cambia targetAI, limpiamos errores/copiado (no tocamos output para no molestar)
+  useEffect(() => {
+    setState(null);
+    setCopied(false);
+  }, [targetAI]);
+
   async function onRun() {
     setState(null);
 
-    // si ya está alcanzado, no disparamos request
     if (limitReached) {
       setState({
         ok: false,
@@ -127,6 +132,7 @@ export default function PromptOptimizerClient() {
         const res = await fetch("/api/tools/prompt-optimizer/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          // ✅ ya NO mandamos "mode"
           body: JSON.stringify({ input: raw, targetAI }),
         });
 
@@ -134,11 +140,14 @@ export default function PromptOptimizerClient() {
 
         if (!res.ok || !("ok" in data) || data.ok === false) {
           const err =
-            (data as ApiErr) ?? ({ ok: false, message: "Error desconocido." } as ApiErr);
+            (data as ApiErr) ??
+            ({ ok: false, message: "Error desconocido." } as ApiErr);
+
           setState(err);
           setOptimized("");
           setMeta(null);
           setCopied(false);
+
           await fetchUsage();
           return;
         }
@@ -150,9 +159,10 @@ export default function PromptOptimizerClient() {
           engine: ok.engine,
           model: ok.model,
           latencyMs: ok.latencyMs,
+          subscriptionTier: ok.subscriptionTier,
         });
-        setCopied(false);
 
+        setCopied(false);
         await fetchUsage();
       } catch {
         setState({ ok: false, message: "No se pudo conectar con el servidor." });
@@ -202,7 +212,6 @@ export default function PromptOptimizerClient() {
     if (!usage) return false;
     if (usage.plan !== "free") return false;
     if (usage.dailyLimit == null) return false;
-    // lo mostramos si ya alcanzó o si le quedan 2 o menos
     const remaining = usage.dailyLimit - usage.usedToday;
     return remaining <= 2;
   }, [usage]);
@@ -216,7 +225,7 @@ export default function PromptOptimizerClient() {
 
   return (
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5 space-y-4">
-      {/* ✅ Paso 3: Banner amarillo UX */}
+      {/* Banner amarillo UX: límite free */}
       {showLimitBanner ? (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
           <div className="flex items-start gap-3">
@@ -251,10 +260,10 @@ export default function PromptOptimizerClient() {
 
               <div className="mt-3 flex flex-wrap gap-2">
                 <Link
-                  href="/dashboard/upgrade"
+                  href="/dashboard/upgrade?tier=basic"
                   className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
                 >
-                  Activar Pro (ilimitado)
+                  Activar Pro Basic
                 </Link>
 
                 <button
@@ -300,7 +309,16 @@ export default function PromptOptimizerClient() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* ✅ CTA a Unlimited (+18) */}
+          <Link
+            href="/dashboard/tools/optimizer-unlimited"
+            className="inline-flex items-center justify-center rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-2 text-sm font-semibold text-fuchsia-200 hover:bg-fuchsia-500/15 transition"
+            title="Optimizer Unlimited (NSFW +18)"
+          >
+            Ultimate (+18) →
+          </Link>
+
           <label className="text-xs text-neutral-400">Target</label>
           <select
             value={targetAI}
@@ -377,10 +395,10 @@ export default function PromptOptimizerClient() {
           {state.code === "FREE_LIMIT_REACHED" ? (
             <div className="pt-2">
               <Link
-                href="/dashboard/upgrade"
+                href="/dashboard/upgrade?tier=basic"
                 className="inline-flex items-center justify-center rounded-xl bg-amber-500 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
               >
-                Activar Pro (ilimitado)
+                Activar Pro Basic
               </Link>
             </div>
           ) : null}
@@ -391,8 +409,16 @@ export default function PromptOptimizerClient() {
       <div className="rounded-xl bg-neutral-950 border border-neutral-800 p-4 space-y-3">
         <div>
           <div className="text-sm font-semibold text-neutral-100">Optimizado</div>
+
           {meta ? (
             <div className="mt-1 text-xs text-neutral-500">
+              {meta.subscriptionTier ? (
+                <>
+                  tier:{" "}
+                  <span className="text-neutral-300">{meta.subscriptionTier}</span>{" "}
+                  ·{" "}
+                </>
+              ) : null}
               plan: <span className="text-neutral-300">{meta.plan}</span> · engine:{" "}
               <span className="text-neutral-300">{meta.engine}</span>
               {meta.model ? (

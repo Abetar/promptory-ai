@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { hasActiveSubscription } from "@/lib/subscription";
+import { hasActiveSubscription, hasUnlimitedSubscription } from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -53,6 +53,9 @@ export default async function DashboardPage() {
   // ✅ Pro real (DB + fallback env según tu subscription.ts)
   const isPro = await hasActiveSubscription();
 
+  // ✅ Unlimited (Pro Unlimited) - solo para render UI
+  const isUnlimited = await hasUnlimitedSubscription();
+
   // ✅ NUEVO: requests del usuario (pendientes = en revisión)
   const userEmail = session?.user?.email ?? null;
   const pendingMyRequests = userEmail
@@ -75,8 +78,7 @@ export default async function DashboardPage() {
 
           {!isPro ? (
             <div className="text-xs text-neutral-500">
-              Tip: con <span className="text-neutral-300">Pro</span> tienes
-              acceso ilimitado a herramientas premium.
+              Tip: con <span className="text-neutral-300">Pro</span> tienes acceso ilimitado a herramientas premium.
             </div>
           ) : null}
 
@@ -125,12 +127,9 @@ export default async function DashboardPage() {
         <section className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="text-sm font-semibold text-amber-200">
-                Desbloquea Promptory Pro
-              </div>
+              <div className="text-sm font-semibold text-amber-200">Desbloquea Promptory Pro</div>
               <p className="mt-1 text-sm text-amber-200/80">
-                Prompt Optimizer ilimitado, acceso anticipado a nuevas
-                herramientas y cero límites diarios.
+                Prompt Optimizer ilimitado, acceso anticipado a nuevas herramientas y cero límites diarios.
               </p>
             </div>
 
@@ -159,9 +158,7 @@ export default async function DashboardPage() {
           href="/dashboard/prompts"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">
-            Explorar prompts
-          </div>
+          <div className="text-sm font-semibold text-neutral-100">Explorar prompts</div>
           <p className="mt-2 text-sm text-neutral-400">
             Encuentra prompts por tipo, AI y free/premium.
           </p>
@@ -187,9 +184,7 @@ export default async function DashboardPage() {
           href="/dashboard/packs"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">
-            Packs de prompts
-          </div>
+          <div className="text-sm font-semibold text-neutral-100">Packs de prompts</div>
           <p className="mt-2 text-sm text-neutral-400">
             Colecciones curadas de prompts listas para usar.
           </p>
@@ -218,9 +213,7 @@ export default async function DashboardPage() {
         >
           <div className="text-sm font-semibold text-neutral-100">
             Mis requests
-            {pendingMyRequests > 0 ? (
-              <Badge>{pendingMyRequests} en revisión</Badge>
-            ) : null}
+            {pendingMyRequests > 0 ? <Badge>{pendingMyRequests} en revisión</Badge> : null}
           </div>
           <p className="mt-2 text-sm text-neutral-400">
             Da seguimiento a tus solicitudes de nuevos prompts.
@@ -289,6 +282,62 @@ export default async function DashboardPage() {
 
             {/* Overlay suave si no es pro */}
             {!isPro ? (
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-neutral-950/0 to-neutral-950/30" />
+            ) : null}
+          </div>
+
+          {/* ✅ Optimizer Ultimate / Unlimited (NSFW) */}
+          <div className="relative rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 overflow-hidden">
+            {/* pill + botón estilo screenshot */}
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-neutral-100 flex items-center gap-2">
+                  Optimizer Ultimate
+                  <span className="inline-flex items-center rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-xs font-semibold text-fuchsia-200">
+                    NSFW
+                  </span>
+                </div>
+                <p className="mt-2 text-sm text-neutral-400">
+                  Optimización avanzada (Ultimate). Output: solo prompts optimizados.
+                </p>
+              </div>
+
+              {!isUnlimited ? (
+                <Link
+                  href="/dashboard/upgrade"
+                  className="inline-flex items-center justify-center rounded-xl bg-fuchsia-500 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
+                >
+                  Subir a Unlimited
+                </Link>
+              ) : null}
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              <Link
+                href="/dashboard/tools/optimizer-unlimited"
+                className={[
+                  "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition",
+                  isUnlimited
+                    ? "bg-neutral-100 text-neutral-950 hover:opacity-90"
+                    : "border border-neutral-800 bg-neutral-950 text-neutral-200 hover:bg-neutral-900",
+                ].join(" ")}
+              >
+                {isUnlimited ? "Abrir →" : "Ver →"}
+              </Link>
+
+              {!isUnlimited ? (
+                <span className="inline-flex items-center rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-200">
+                  Requiere Pro Unlimited
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-1.5 text-xs font-semibold text-fuchsia-200">
+                  Pro Unlimited
+                </span>
+              )}
+            </div>
+
+            {/* Overlay suave si no es unlimited */}
+            {!isUnlimited ? (
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-neutral-950/0 to-neutral-950/30" />
             ) : null}
           </div>

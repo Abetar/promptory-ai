@@ -1,3 +1,4 @@
+// app/dashboard/admin/access/page.tsx
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";

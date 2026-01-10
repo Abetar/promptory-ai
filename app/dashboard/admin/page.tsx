@@ -1,3 +1,4 @@
+// app/dashboard/admin/page.tsx
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
@@ -36,37 +37,22 @@ export default async function AdminHomePage() {
   });
 
   // =========================
-  // ✅ Uso reciente (AuditEvent)
+  // Uso reciente (AuditEvent)
   // =========================
   const now = new Date();
-  const startOfToday = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate(),
-    0,
-    0,
-    0,
-    0
-  );
-  const startOfTomorrow = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + 1,
-    0,
-    0,
-    0,
-    0
-  );
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const startOfTomorrow = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, 0, 0, 0, 0);
 
   const eventsToday = await prisma.auditEvent.count({
     where: { createdAt: { gte: startOfToday, lt: startOfTomorrow } },
   });
 
   const optimizerRunsToday = await prisma.auditEvent.count({
-    where: {
-      event: "optimizer.run",
-      createdAt: { gte: startOfToday, lt: startOfTomorrow },
-    },
+    where: { event: "optimizer.run", createdAt: { gte: startOfToday, lt: startOfTomorrow } },
+  });
+
+  const ultimateRunsToday = await prisma.auditEvent.count({
+    where: { event: "optimizer.ultimate.run", createdAt: { gte: startOfToday, lt: startOfTomorrow } },
   });
 
   const loginUsersToday = await prisma.auditEvent.findMany({
@@ -93,9 +79,7 @@ export default async function AdminHomePage() {
     take: 5,
   });
 
-  const promptIds = topCopies
-    .map((x) => x.entityId)
-    .filter(Boolean) as string[];
+  const promptIds = topCopies.map((x) => x.entityId).filter(Boolean) as string[];
 
   const prompts = promptIds.length
     ? await prisma.prompt.findMany({
@@ -114,7 +98,6 @@ export default async function AdminHomePage() {
   });
 
   return (
-    // ✅ Evita el "espacio blanco" por overflow horizontal en mobile
     <div className="space-y-8 overflow-x-hidden">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Admin</h1>
@@ -123,16 +106,14 @@ export default async function AdminHomePage() {
         </p>
       </div>
 
-      {/* Cards principales */}
+      {/* ✅ Cards principales (navegación) */}
       <div className="grid gap-4 md:grid-cols-2">
         <Link
           href="/dashboard/admin/prompts"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
           <div className="text-sm font-semibold text-neutral-100">Prompts</div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Crear, editar, publicar y asignar AIs.
-          </p>
+          <p className="mt-2 text-sm text-neutral-400">Crear, editar, publicar y asignar AIs.</p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Entrar →
           </div>
@@ -143,9 +124,7 @@ export default async function AdminHomePage() {
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
           <div className="text-sm font-semibold text-neutral-100">AIs</div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Crear, editar, activar/desactivar y mantener catálogo.
-          </p>
+          <p className="mt-2 text-sm text-neutral-400">Crear, editar, activar/desactivar y mantener catálogo.</p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Entrar →
           </div>
@@ -156,9 +135,7 @@ export default async function AdminHomePage() {
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
           <div className="text-sm font-semibold text-neutral-100">Packs</div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Crear, editar, publicar y asignar prompts a packs.
-          </p>
+          <p className="mt-2 text-sm text-neutral-400">Crear, editar, publicar y asignar prompts a packs.</p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Entrar →
           </div>
@@ -170,13 +147,9 @@ export default async function AdminHomePage() {
         >
           <div className="text-sm font-semibold text-neutral-100">
             Requests
-            {pendingRequests > 0 ? (
-              <Badge>{pendingRequests} nuevo(s)</Badge>
-            ) : null}
+            {pendingRequests > 0 ? <Badge>{pendingRequests} nuevo(s)</Badge> : null}
           </div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Solicitudes de nuevos prompts enviadas por usuarios.
-          </p>
+          <p className="mt-2 text-sm text-neutral-400">Solicitudes de nuevos prompts enviadas por usuarios.</p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Entrar →
           </div>
@@ -187,9 +160,7 @@ export default async function AdminHomePage() {
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
           <div className="text-sm font-semibold text-neutral-100">Accesos</div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Otorgar acceso a prompts premium por usuario.
-          </p>
+          <p className="mt-2 text-sm text-neutral-400">Otorgar acceso a prompts premium por usuario.</p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Entrar →
           </div>
@@ -200,9 +171,7 @@ export default async function AdminHomePage() {
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
           <div className="text-sm font-semibold text-neutral-100">Usuarios</div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Ver quién ya tiene cuenta en Promptory AI.
-          </p>
+          <p className="mt-2 text-sm text-neutral-400">Ver quién ya tiene cuenta en Promptory AI.</p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Entrar →
           </div>
@@ -214,13 +183,9 @@ export default async function AdminHomePage() {
         >
           <div className="text-sm font-semibold text-neutral-100">
             Compras
-            {pendingPackPurchases > 0 ? (
-              <Badge>{pendingPackPurchases} pendiente(s)</Badge>
-            ) : null}
+            {pendingPackPurchases > 0 ? <Badge>{pendingPackPurchases} pendiente(s)</Badge> : null}
           </div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Validar pagos y desbloquear packs.
-          </p>
+          <p className="mt-2 text-sm text-neutral-400">Validar pagos y desbloquear packs.</p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Gestionar →
           </div>
@@ -234,29 +199,38 @@ export default async function AdminHomePage() {
             Suscripciones
             {pendingSubs > 0 ? <Badge>{pendingSubs} pendiente(s)</Badge> : null}
           </div>
-          <p className="mt-2 text-sm text-neutral-400">
-            Aprobar / rechazar solicitudes Pro (validación manual).
-          </p>
+          <p className="mt-2 text-sm text-neutral-400">Aprobar / rechazar solicitudes Pro (validación manual).</p>
           <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
             Gestionar →
           </div>
         </Link>
+
+        {/* ✅ Ultimate metrics */}
+        <Link
+          href="/dashboard/admin/ultimate"
+          className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
+        >
+          <div className="text-sm font-semibold text-neutral-100">
+            Ultimate (NSFW) · Métricas
+            {ultimateRunsToday > 0 ? <Badge>{ultimateRunsToday} hoy</Badge> : null}
+          </div>
+          <p className="mt-2 text-sm text-neutral-400">
+            Ver uso Ultimate: usuario, fecha, engine/model y latencia.
+          </p>
+          <div className="mt-4 inline-flex rounded-xl bg-neutral-100 px-4 py-2 text-sm font-semibold text-neutral-950">
+            Entrar →
+          </div>
+        </Link>
       </div>
 
-      {/* ✅ Uso reciente */}
+      {/* ✅ Sección de métricas (uso reciente) */}
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
-          {/* ✅ min-w-0 evita overflow por textos largos en flex */}
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight">
-              Uso reciente
-            </h2>
-            <p className="mt-1 text-sm text-neutral-400">
-              Señales rápidas para validar actividad real (hoy).
-            </p>
+            <h2 className="text-lg font-semibold tracking-tight">Uso reciente</h2>
+            <p className="mt-1 text-sm text-neutral-400">Señales rápidas para validar actividad real (hoy).</p>
           </div>
 
-          {/* ✅ Evita que este link empuje el layout */}
           <Link
             href="/dashboard/admin/events"
             className="shrink-0 whitespace-nowrap text-sm text-neutral-300 hover:text-neutral-100 transition"
@@ -268,95 +242,47 @@ export default async function AdminHomePage() {
         <div className="grid gap-4 lg:grid-cols-4">
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 text-sm font-semibold text-neutral-100">
-                Usuarios activos hoy
-              </div>
+              <div className="min-w-0 text-sm font-semibold text-neutral-100">Usuarios activos hoy</div>
               <Pill>auth.login</Pill>
             </div>
-
-            <div className="mt-3 text-3xl font-semibold text-neutral-100">
-              {activeUsersToday}
-            </div>
-
-            <p className="mt-2 text-sm text-neutral-400">
-              Usuarios únicos con login hoy.
-            </p>
+            <div className="mt-3 text-3xl font-semibold text-neutral-100">{activeUsersToday}</div>
+            <p className="mt-2 text-sm text-neutral-400">Usuarios únicos con login hoy.</p>
           </div>
 
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 text-sm font-semibold text-neutral-100">
-                Eventos hoy
-              </div>
+              <div className="min-w-0 text-sm font-semibold text-neutral-100">Eventos hoy</div>
               <Pill>AuditEvent</Pill>
             </div>
-
-            <div className="mt-3 text-3xl font-semibold text-neutral-100">
-              {eventsToday}
-            </div>
-
-            <p className="mt-2 text-sm text-neutral-400">
-              Total de eventos registrados hoy.
-            </p>
+            <div className="mt-3 text-3xl font-semibold text-neutral-100">{eventsToday}</div>
+            <p className="mt-2 text-sm text-neutral-400">Total de eventos registrados hoy.</p>
           </div>
 
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 text-sm font-semibold text-neutral-100">
-                Runs Optimizer (hoy)
-              </div>
+              <div className="min-w-0 text-sm font-semibold text-neutral-100">Runs Optimizer (hoy)</div>
               <Pill>optimizer.run</Pill>
             </div>
-
-            <div className="mt-3 text-3xl font-semibold text-neutral-100">
-              {optimizerRunsToday}
-            </div>
-
-            <p className="mt-2 text-sm text-neutral-400">
-              Veces que se ejecutó el Prompt Optimizer hoy.
-            </p>
+            <div className="mt-3 text-3xl font-semibold text-neutral-100">{optimizerRunsToday}</div>
+            <p className="mt-2 text-sm text-neutral-400">Ejecuciones del optimizer normal hoy.</p>
           </div>
 
           <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
             <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0 text-sm font-semibold text-neutral-100">
-                Top prompts copiados (hoy)
-              </div>
-              <Pill>prompt.copy</Pill>
+              <div className="min-w-0 text-sm font-semibold text-neutral-100">Runs Ultimate (hoy)</div>
+              <Pill>optimizer.ultimate.run</Pill>
             </div>
 
-            <div className="mt-3 space-y-2">
-              {topCopies.length === 0 ? (
-                <div className="text-sm text-neutral-400">
-                  Aún no hay copias hoy.
-                </div>
-              ) : (
-                topCopies.map((row) => {
-                  const id = row.entityId ?? "";
-                  const title = promptTitleById.get(id) ?? `Prompt (${id})`;
-                  const count = row._count.entityId;
+            <div className="mt-3 text-3xl font-semibold text-neutral-100">{ultimateRunsToday}</div>
+            <p className="mt-2 text-sm text-neutral-400">Ejecuciones del optimizer Ultimate hoy.</p>
 
-                  return (
-                    <div
-                      key={id}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-950/40 px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <div className="truncate text-sm font-semibold text-neutral-100">
-                          {title}
-                        </div>
-                        <div className="truncate text-xs text-neutral-500">
-                          {id}
-                        </div>
-                      </div>
-
-                      <div className="shrink-0 text-sm font-semibold text-neutral-100">
-                        {count}
-                      </div>
-                    </div>
-                  );
-                })
-              )}
+            <div className="mt-4">
+              <Link
+                href="/dashboard/admin/ultimate"
+                className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
+              >
+                Ver detalle →
+              </Link>
             </div>
           </div>
         </div>
@@ -364,12 +290,8 @@ export default async function AdminHomePage() {
         <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
           <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
-              <div className="text-sm font-semibold text-neutral-100">
-                Últimos logins
-              </div>
-              <p className="mt-1 text-sm text-neutral-400">
-                Los accesos más recientes a la app.
-              </p>
+              <div className="text-sm font-semibold text-neutral-100">Últimos logins</div>
+              <p className="mt-1 text-sm text-neutral-400">Los accesos más recientes a la app.</p>
             </div>
 
             <Link
@@ -382,9 +304,7 @@ export default async function AdminHomePage() {
 
           <div className="mt-4 grid gap-2 md:grid-cols-2">
             {recentLogins.length === 0 ? (
-              <div className="text-sm text-neutral-400">
-                Aún no hay logins registrados.
-              </div>
+              <div className="text-sm text-neutral-400">Aún no hay logins registrados.</div>
             ) : (
               recentLogins.map((e) => (
                 <div
@@ -392,17 +312,50 @@ export default async function AdminHomePage() {
                   className="flex items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-950/40 px-3 py-2"
                 >
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold text-neutral-100">
-                      {e.emailSnapshot ?? "—"}
-                    </div>
+                    <div className="truncate text-sm font-semibold text-neutral-100">{e.emailSnapshot ?? "—"}</div>
                     <div className="text-xs text-neutral-500">
                       {new Date(e.createdAt).toLocaleString("es-MX")}
                     </div>
                   </div>
-
                   <Pill>login</Pill>
                 </div>
               ))
+            )}
+          </div>
+        </div>
+
+        {/* Top copies (opcional: lo puedes dejar como estaba antes si lo quieres) */}
+        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-neutral-100">Top prompts copiados (hoy)</div>
+              <p className="mt-1 text-sm text-neutral-400">Basado en prompt.copy.</p>
+            </div>
+            <Pill>prompt.copy</Pill>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            {topCopies.length === 0 ? (
+              <div className="text-sm text-neutral-400">Aún no hay copias hoy.</div>
+            ) : (
+              topCopies.map((row) => {
+                const id = row.entityId ?? "";
+                const title = promptTitleById.get(id) ?? `Prompt (${id})`;
+                const count = row._count.entityId;
+
+                return (
+                  <div
+                    key={id}
+                    className="flex items-center justify-between gap-3 rounded-xl border border-neutral-800 bg-neutral-950/40 px-3 py-2"
+                  >
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-semibold text-neutral-100">{title}</div>
+                      <div className="truncate text-xs text-neutral-500">{id}</div>
+                    </div>
+                    <div className="shrink-0 text-sm font-semibold text-neutral-100">{count}</div>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>

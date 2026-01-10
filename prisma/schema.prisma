@@ -34,7 +34,7 @@ model User {
   subscription          UserSubscription?
   subscriptionPurchases SubscriptionPurchase[]
 
-  // ✅ NUEVO: Audit / usage events
+  // ✅ Audit / usage events
   auditEvents AuditEvent[]
 
   createdAt DateTime @default(now())
@@ -273,17 +273,11 @@ enum ToolTargetAI {
   deepseek
 }
 
-/**
- * ✅ NUEVO: plan para runs
- */
 enum OptimizerPlan {
   free
   pro
 }
 
-/**
- * ✅ NUEVO: motor para runs
- */
 enum OptimizerEngine {
   mock
   openai
@@ -319,11 +313,24 @@ enum SubscriptionStatus {
   cancelled
 }
 
+/**
+ * ✅ NUEVO: tier de suscripción
+ * basic = Pro normal
+ * unlimited = Pro tier 2
+ */
+enum SubscriptionTier {
+  basic
+  unlimited
+}
+
 model UserSubscription {
   id String @id @default(cuid())
 
   userId String             @unique
   status SubscriptionStatus @default(pending)
+
+  // ✅ NUEVO: tier asignado
+  tier SubscriptionTier @default(basic)
 
   // vigencia (si decides mensual/anual)
   startsAt DateTime  @default(now())
@@ -339,6 +346,7 @@ model UserSubscription {
 
   @@index([status])
   @@index([endsAt])
+  @@index([tier])
 }
 
 model SubscriptionPurchase {
@@ -348,6 +356,9 @@ model SubscriptionPurchase {
   amountMx Int
   status   SubscriptionStatus @default(pending)
 
+  // ✅ NUEVO: qué tier pidió el usuario en esta compra/solicitud
+  tier SubscriptionTier @default(basic)
+
   // conciliación manual (MercadoPago)
   mpPaymentId String?
   note        String?
@@ -356,7 +367,7 @@ model SubscriptionPurchase {
   rejectedAt DateTime?
 
   // snapshot para auditoría
-  startsAt DateTime? // si el admin aprueba puede setear inicio/fin
+  startsAt DateTime?
   endsAt   DateTime?
 
   createdAt DateTime @default(now())
@@ -367,12 +378,11 @@ model SubscriptionPurchase {
   @@index([userId])
   @@index([status])
   @@index([createdAt])
+  @@index([tier])
 }
 
 /**
- * ✅ NUEVO: Audit / usage events (login, copy prompt, tool runs, etc.)
- * - userId opcional por si algún día quieres eventos anónimos
- * - emailSnapshot útil para debug/auditoría (no dependes del userId)
+ * ✅ Audit / usage events
  */
 model AuditEvent {
   id            String   @id @default(cuid())

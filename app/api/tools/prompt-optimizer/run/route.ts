@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasActiveSubscription } from "@/lib/subscription";
+import { hasActiveSubscription, hasUnlimitedSubscription, getSubscriptionTier } from "@/lib/subscription";
 import { logEvent } from "@/lib/audit";
 
 export const runtime = "nodejs";
@@ -16,19 +16,29 @@ const FREE_DAILY_LIMIT = Number(
 );
 
 /**
- * OpenAI config
+ * OpenAI config (Tier 1 / Pro)
  */
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 type TargetAI = "chatgpt" | "claude" | "gemini" | "deepseek";
 
+type OptimizerMode = "standard" | "unlimited";
+
 type Body = {
   input: string;
   targetAI?: TargetAI;
+  mode?: OptimizerMode; // ✅ nuevo
 };
 
 function badRequest(message: string) {
   return NextResponse.json({ ok: false, message }, { status: 400 });
+}
+
+function forbidden(message: string, code: string, extra?: Record<string, any>) {
+  return NextResponse.json(
+    { ok: false, message, code, ...(extra ?? {}) },
+    { status: 403 }
+  );
 }
 
 function startOfTodayUTC() {
@@ -61,7 +71,6 @@ function normalizeText(s: string) {
 function looksSpanish(input: string) {
   const t = normalizeText(input).toLowerCase();
 
-  // Señales simples (no perfectas, pero suficientes para Mock)
   const spanishHits = [
     " que ",
     " para ",
@@ -133,7 +142,6 @@ function detectIntent(input: string): Detected {
 
   const language: "es" | "en" = looksSpanish(raw) ? "es" : "en";
 
-  // Platform guesses
   let platform: Detected["platform"] = "General";
   if (t.includes("tiktok") || t.includes("tik tok")) platform = "TikTok";
   else if (t.includes("youtube") || t.includes("yt")) platform = "YouTube";
@@ -148,7 +156,6 @@ function detectIntent(input: string): Detected {
   else if (t.includes("app") || t.includes("android") || t.includes("ios"))
     platform = "App";
 
-  // Output type guesses
   let outputType: Detected["outputType"] = "Respuesta";
   if (t.includes("guion") || t.includes("script")) outputType = "Guion";
   else if (t.includes("post") || t.includes("publicación") || t.includes("publicacion"))
@@ -177,7 +184,6 @@ function detectIntent(input: string): Detected {
     outputType = "Plan";
   else if (t.includes("resumen") || t.includes("summary")) outputType = "Resumen";
 
-  // Category guesses
   let category: Detected["category"] = "general";
   if (outputType === "Código") category = "coding";
   else if (
@@ -204,7 +210,6 @@ function detectIntent(input: string): Detected {
   else if (t.includes("organiza") || t.includes("prioriza") || t.includes("tareas"))
     category = "productivity";
 
-  // Tone guesses
   let tone: Detected["tone"] = "Profesional";
   if (t.includes("casual") || t.includes("informal")) tone = "Casual";
   else if (t.includes("persuas") || t.includes("vende") || t.includes("convencer"))
@@ -212,7 +217,6 @@ function detectIntent(input: string): Detected {
   else if (category === "coding") tone = "Técnico";
   else if (t.includes("amigable") || t.includes("simple")) tone = "Amigable";
 
-  // Audience guesses
   let audience: Detected["audience"] = "General";
   if (t.includes("principiante") || t.includes("novato")) audience = "Principiantes";
   else if (t.includes("avanzado") || t.includes("senior")) audience = "Avanzado";
@@ -220,7 +224,6 @@ function detectIntent(input: string): Detected {
   else if (t.includes("no sé") || t.includes("no se") || t.includes("no idea"))
     audience = "Principiantes";
 
-  // Deliverables by category/outputType (sin placeholders)
   const deliverables: string[] = [];
   if (outputType === "Guion") {
     deliverables.push(
@@ -285,7 +288,6 @@ function detectIntent(input: string): Detected {
     );
   }
 
-  // Assumptions (solo si faltan datos)
   const assumptions: string[] = [];
   if (platform === "General") {
     assumptions.push(
@@ -301,7 +303,6 @@ function detectIntent(input: string): Detected {
         : "No experience level specified; I'll assume beginner-to-intermediate."
     );
   }
-  // Si el usuario no menciona formato/salida, reforzamos que elegimos uno
   if (!/guion|script|post|carrusel|email|correo|ticket|código|codigo|plan|resumen/i.test(raw)) {
     assumptions.push(
       language === "es"
@@ -340,21 +341,15 @@ function buildMockOutput(input: string, targetAI: string) {
 
   const objective =
     lang === "es"
-      ? `Generar una respuesta final que cumpla la intención del usuario y entregue: ${d.deliverables.join(
-          ", "
-        )}.`
-      : `Generate a final response that matches the user's intent and delivers: ${d.deliverables.join(
-          ", "
-        )}.`;
+      ? `Generar una respuesta final que cumpla la intención del usuario y entregue: ${d.deliverables.join(", ")}.`
+      : `Generate a final response that matches the user's intent and delivers: ${d.deliverables.join(", ")}.`;
 
   const suppositions =
     d.assumptions.length === 0
       ? lang === "es"
         ? "No se requieren supuestos adicionales."
         : "No additional assumptions are required."
-      : d.assumptions
-          .map((a) => `- ${a}`)
-          .join("\n");
+      : d.assumptions.map((a) => `- ${a}`).join("\n");
 
   const inputsBlock =
     lang === "es"
@@ -446,7 +441,6 @@ function buildMockOutput(input: string, targetAI: string) {
           "5) What is the non-negotiable constraint (time, format, length, policies)?",
         ].join("\n");
 
-  // ✅ PROMPT FINAL listo para copiar/pegar (lo que el usuario pega en ChatGPT/Claude/Gemini/Deepseek)
   return `
 ROL:
 ${role}
@@ -514,16 +508,6 @@ Optimiza el siguiente prompt para ${targetAI.toUpperCase()}.
 
 PROMPT ORIGINAL:
 ${input}
-
-FORMATO DEL PROMPT FINAL:
-ROL:
-CONTEXTO:
-OBJETIVO:
-INPUTS (si faltan, supuestos):
-PASOS:
-FORMATO DE SALIDA:
-REGLAS Y RESTRICCIONES:
-CHECKLIST DE CALIDAD:
 `.trim();
 
   const resp = await client.responses.create({
@@ -565,6 +549,7 @@ export async function POST(req: Request) {
 
   const input = String(body.input ?? "").trim();
   const targetAI = (body.targetAI ?? "chatgpt") as TargetAI;
+  const mode: OptimizerMode = (body.mode ?? "standard") as OptimizerMode;
 
   if (!input || input.length < 10) {
     return badRequest("Input demasiado corto.");
@@ -574,10 +559,34 @@ export async function POST(req: Request) {
     return badRequest("targetAI inválido.");
   }
 
-  const hasSub = await hasActiveSubscription();
-  const plan: "free" | "pro" = hasSub ? "pro" : "free";
+  if (!["standard", "unlimited"].includes(mode)) {
+    return badRequest("mode inválido.");
+  }
 
-  // Free daily limit
+  // =========================
+  // ✅ Tier gating
+  // =========================
+  const tier = await getSubscriptionTier(); // "none" | "basic" | "unlimited"
+
+  // Tier 2 requerido para modo unlimited
+  if (mode === "unlimited") {
+    const okUnlimited = await hasUnlimitedSubscription();
+    if (!okUnlimited) {
+      return forbidden(
+        "Necesitas Pro Unlimited para usar este modo.",
+        "UNLIMITED_REQUIRED",
+        { requiredTier: "unlimited" }
+      );
+    }
+  }
+
+  // Para modo standard: Pro Basic o Unlimited cuentan como Pro
+  const hasPro = tier !== "none";
+  const plan: "free" | "pro" = hasPro ? "pro" : "free";
+
+  // =========================
+  // ✅ Free daily limit (solo standard)
+  // =========================
   if (plan === "free") {
     const from = startOfTodayUTC();
     const usedToday = await prisma.promptOptimizerRun.count({
@@ -596,6 +605,11 @@ export async function POST(req: Request) {
     }
   }
 
+  // =========================
+  // ✅ Engine decision
+  // =========================
+  // Nota: aquí NO conecto “unlimited” a otro engine por razones de policy.
+  // Tú puedes cambiar esta lógica para usar tu API cuando mode === "unlimited".
   const canUseOpenAI = plan === "pro" && Boolean(process.env.OPENAI_API_KEY);
   const engine: "openai" | "mock" = canUseOpenAI ? "openai" : "mock";
 
@@ -611,7 +625,6 @@ export async function POST(req: Request) {
       output = buildMockOutput(input, targetAI);
     }
   } catch {
-    // fallback seguro
     output = buildMockOutput(input, targetAI);
     model = null;
   }
@@ -634,9 +647,12 @@ export async function POST(req: Request) {
   // ===========================
   // ✅ Audit event: optimizer.run
   // ===========================
-  const storeFull =
+  const storeFullEnv =
     String(process.env.AUDIT_STORE_OPTIMIZER_INPUT ?? "").toLowerCase() ===
     "true";
+
+  // ✅ Unlimited: SIEMPRE guardar fullInput
+  const storeFull = mode === "unlimited" ? true : storeFullEnv;
 
   await logEvent({
     userId,
@@ -646,6 +662,8 @@ export async function POST(req: Request) {
     entityId: run.id,
     meta: {
       runId: run.id,
+      mode, // ✅
+      subscriptionTier: tier, // ✅ "none" | "basic" | "unlimited"
       targetAI,
       plan,
       engine,
@@ -659,6 +677,8 @@ export async function POST(req: Request) {
 
   return NextResponse.json({
     ok: true,
+    mode,
+    subscriptionTier: tier,
     plan,
     engine,
     model,
