@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
-import { hasActiveSubscription, hasUnlimitedSubscription } from "@/lib/subscription";
+import {
+  hasActiveSubscription,
+  hasUnlimitedSubscription,
+} from "@/lib/subscription";
 import { prisma } from "@/lib/prisma";
 
 export const runtime = "nodejs";
@@ -20,6 +23,14 @@ function ProBadge() {
   return (
     <span className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2 py-0.5 text-xs font-semibold text-emerald-200">
       PRO
+    </span>
+  );
+}
+
+function ProUnlimitedBadge() {
+  return (
+    <span className="inline-flex items-center rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-xs font-semibold text-fuchsia-200">
+      PRO UNLIMITED
     </span>
   );
 }
@@ -73,12 +84,17 @@ export default async function DashboardPage() {
 
           <p className="text-sm text-neutral-400 flex flex-wrap items-center gap-2">
             Bienvenido, <span className="text-neutral-200">{name}</span>
-            {isPro ? <ProBadge /> : null}
+            {isUnlimited ? (
+              <ProUnlimitedBadge />
+            ) : isPro ? (
+              <ProBadge />
+            ) : null}
           </p>
 
           {!isPro ? (
             <div className="text-xs text-neutral-500">
-              Tip: con <span className="text-neutral-300">Pro</span> tienes acceso ilimitado a herramientas premium.
+              Tip: con <span className="text-neutral-300">Pro</span> tienes
+              acceso ilimitado a herramientas premium.
             </div>
           ) : null}
 
@@ -107,7 +123,7 @@ export default async function DashboardPage() {
               href="/dashboard/upgrade"
               className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
             >
-              Gestionar Pro →
+              Gestionar {isUnlimited ? "Unlimited" : "Pro"} →
             </Link>
           )}
 
@@ -127,9 +143,12 @@ export default async function DashboardPage() {
         <section className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-5">
           <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
             <div>
-              <div className="text-sm font-semibold text-amber-200">Desbloquea Promptory Pro</div>
+              <div className="text-sm font-semibold text-amber-200">
+                Desbloquea Promptory Pro
+              </div>
               <p className="mt-1 text-sm text-amber-200/80">
-                Prompt Optimizer ilimitado, acceso anticipado a nuevas herramientas y cero límites diarios.
+                Prompt Optimizer ilimitado, acceso anticipado a nuevas
+                herramientas y cero límites diarios.
               </p>
             </div>
 
@@ -158,7 +177,9 @@ export default async function DashboardPage() {
           href="/dashboard/prompts"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">Explorar prompts</div>
+          <div className="text-sm font-semibold text-neutral-100">
+            Explorar prompts
+          </div>
           <p className="mt-2 text-sm text-neutral-400">
             Encuentra prompts por tipo, AI y free/premium.
           </p>
@@ -171,7 +192,9 @@ export default async function DashboardPage() {
           href="/dashboard/mis-prompts"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">Mis prompts</div>
+          <div className="text-sm font-semibold text-neutral-100">
+            Mis prompts
+          </div>
           <p className="mt-2 text-sm text-neutral-400">
             Favoritos y prompts guardados para acceso rápido.
           </p>
@@ -184,7 +207,9 @@ export default async function DashboardPage() {
           href="/dashboard/packs"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">Packs de prompts</div>
+          <div className="text-sm font-semibold text-neutral-100">
+            Packs de prompts
+          </div>
           <p className="mt-2 text-sm text-neutral-400">
             Colecciones curadas de prompts listas para usar.
           </p>
@@ -197,7 +222,9 @@ export default async function DashboardPage() {
           href="/dashboard/compras"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
         >
-          <div className="text-sm font-semibold text-neutral-100">Mis compras</div>
+          <div className="text-sm font-semibold text-neutral-100">
+            Mis compras
+          </div>
           <p className="mt-2 text-sm text-neutral-400">
             Revisa el estado de tus packs premium.
           </p>
@@ -213,7 +240,9 @@ export default async function DashboardPage() {
         >
           <div className="text-sm font-semibold text-neutral-100">
             Mis requests
-            {pendingMyRequests > 0 ? <Badge>{pendingMyRequests} en revisión</Badge> : null}
+            {pendingMyRequests > 0 ? (
+              <Badge>{pendingMyRequests} en revisión</Badge>
+            ) : null}
           </div>
           <p className="mt-2 text-sm text-neutral-400">
             Da seguimiento a tus solicitudes de nuevos prompts.
@@ -288,7 +317,6 @@ export default async function DashboardPage() {
 
           {/* ✅ Optimizer Ultimate / Unlimited (NSFW) */}
           <div className="relative rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 overflow-hidden">
-            {/* pill + botón estilo screenshot */}
             <div className="flex items-start justify-between gap-3">
               <div>
                 <div className="text-sm font-semibold text-neutral-100 flex items-center gap-2">
@@ -298,7 +326,8 @@ export default async function DashboardPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-neutral-400">
-                  Optimización avanzada (Ultimate). Output: solo prompts optimizados.
+                  Optimización avanzada (Ultimate). Output: solo prompts
+                  optimizados.
                 </p>
               </div>
 

@@ -2,11 +2,7 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/admin";
 import { prisma } from "@/lib/prisma";
-import {
-  grantProBasicAction,
-  grantProUnlimitedAction,
-  revokeProAction,
-} from "./actions";
+import { grantProBasicAction, grantProUnlimitedAction, revokeProAction } from "./actions";
 
 export const runtime = "nodejs";
 
@@ -29,16 +25,13 @@ export default async function AdminUsersPage() {
       subscription: {
         select: {
           status: true,
-          tier: true, // ✅ nuevo
+          tier: true,
           endsAt: true,
           startsAt: true,
         },
       },
       _count: {
-        select: {
-          promptSaves: true,
-          packs: true,
-        },
+        select: { promptSaves: true, packs: true },
       },
     },
   });
@@ -79,27 +72,29 @@ export default async function AdminUsersPage() {
               {users.map((u) => {
                 const sub = u.subscription;
 
-                const isApprovedActive =
-                  sub?.status === "approved" && isActiveByDates(sub.endsAt ?? null);
+                const status = sub?.status ?? null; // approved | pending | rejected | cancelled | null
+                const tier = (sub?.tier ?? "basic") as "basic" | "unlimited";
 
-                // En tu app, pending cuenta como acceso provisional (trust-first)
-                const isPending = sub?.status === "pending";
-                const hasAnyPro = isApprovedActive || isPending;
+                // ✅ Admin: acciones dependen del status, NO de fechas
+                const hasProRecord = status === "approved" || status === "pending";
+                const isUnlimited = hasProRecord && tier === "unlimited";
+                const isBasic = hasProRecord && tier === "basic";
 
-                const tier = sub?.tier ?? "basic";
-                const isUnlimited = hasAnyPro && tier === "unlimited";
+                const isExpired =
+                  status === "approved" && sub?.endsAt ? !isActiveByDates(sub.endsAt) : false;
 
-                const statusLabel = !sub
-                  ? "No"
-                  : sub.status === "approved"
-                  ? isActiveByDates(sub.endsAt ?? null)
-                    ? "Approved"
-                    : "Vencido"
-                  : sub.status === "pending"
-                  ? "Pending (provisional)"
-                  : sub.status === "rejected"
-                  ? "Rejected"
-                  : "Cancelled";
+                const statusLabel =
+                  !sub
+                    ? "No"
+                    : status === "approved"
+                    ? isExpired
+                      ? "Approved (Vencido)"
+                      : "Approved"
+                    : status === "pending"
+                    ? "Pending (provisional)"
+                    : status === "rejected"
+                    ? "Rejected"
+                    : "Cancelled";
 
                 return (
                   <div
@@ -112,7 +107,7 @@ export default async function AdminUsersPage() {
                           {u.email ?? "sin email"}
                         </div>
 
-                        {hasAnyPro ? (
+                        {hasProRecord ? (
                           <span
                             className={[
                               "text-[11px] rounded-full border px-2 py-0.5",
@@ -126,10 +121,7 @@ export default async function AdminUsersPage() {
                         ) : null}
                       </div>
 
-                      {u.name ? (
-                        <div className="text-xs text-neutral-500">{u.name}</div>
-                      ) : null}
-
+                      {u.name ? <div className="text-xs text-neutral-500">{u.name}</div> : null}
                       <div className="text-[11px] text-neutral-600">{u.id}</div>
 
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -157,57 +149,54 @@ export default async function AdminUsersPage() {
                     </div>
 
                     <div className="col-span-2">
-                      {hasAnyPro ? (
+                      {sub ? (
                         <div className="space-y-1">
                           <span
                             className={[
                               "inline-flex text-xs rounded-full border px-2 py-1",
-                              isUnlimited
-                                ? "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200"
-                                : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
+                              hasProRecord
+                                ? isUnlimited
+                                  ? "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200"
+                                  : "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                                : "border-neutral-700 bg-neutral-900 text-neutral-300",
                             ].join(" ")}
                           >
                             {statusLabel}
                           </span>
 
-                          <div className="text-[11px] text-neutral-500">
-                            tier:{" "}
-                            <span className="text-neutral-300">
-                              {tier === "unlimited" ? "unlimited" : "basic"}
-                            </span>
-                          </div>
+                          {hasProRecord ? (
+                            <div className="text-[11px] text-neutral-500">
+                              tier:{" "}
+                              <span className="text-neutral-300">
+                                {tier === "unlimited" ? "unlimited" : "basic"}
+                              </span>
+                            </div>
+                          ) : null}
 
-                          {sub?.endsAt ? (
+                          {sub.endsAt ? (
                             <div className="text-[11px] text-neutral-500">
                               vence: {sub.endsAt.toISOString().slice(0, 10)}
                             </div>
                           ) : (
-                            <div className="text-[11px] text-neutral-500">
-                              sin vencimiento
-                            </div>
+                            <div className="text-[11px] text-neutral-500">sin vencimiento</div>
                           )}
                         </div>
                       ) : (
                         <span className="inline-flex text-xs rounded-full border border-neutral-700 bg-neutral-900 px-2 py-1 text-neutral-300">
-                          {statusLabel}
+                          No
                         </span>
                       )}
                     </div>
 
-                    <div className="col-span-1 text-sm text-neutral-300">
-                      {u._count.promptSaves}
-                    </div>
-
-                    <div className="col-span-1 text-sm text-neutral-300">
-                      {u._count.packs}
-                    </div>
+                    <div className="col-span-1 text-sm text-neutral-300">{u._count.promptSaves}</div>
+                    <div className="col-span-1 text-sm text-neutral-300">{u._count.packs}</div>
 
                     <div className="col-span-2 text-right text-sm text-neutral-300">
                       {u.createdAt.toISOString().slice(0, 10)}
                     </div>
 
                     <div className="col-span-2 flex justify-end gap-2">
-                      {!hasAnyPro ? (
+                      {!hasProRecord ? (
                         <>
                           <form
                             action={async () => {
@@ -239,7 +228,7 @@ export default async function AdminUsersPage() {
                         </>
                       ) : (
                         <>
-                          {!isUnlimited ? (
+                          {isBasic ? (
                             <form
                               action={async () => {
                                 "use server";
@@ -256,6 +245,7 @@ export default async function AdminUsersPage() {
                             </form>
                           ) : null}
 
+                          {/* ✅ Revocar SIEMPRE que exista pro record (basic o unlimited), aunque esté vencido */}
                           <form
                             action={async () => {
                               "use server";
@@ -277,9 +267,7 @@ export default async function AdminUsersPage() {
               })}
 
               {users.length === 0 ? (
-                <div className="px-4 py-10 text-center text-neutral-400">
-                  Aún no hay usuarios.
-                </div>
+                <div className="px-4 py-10 text-center text-neutral-400">Aún no hay usuarios.</div>
               ) : null}
             </div>
           </div>
