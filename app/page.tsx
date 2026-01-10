@@ -24,6 +24,10 @@ export default function LandingPage() {
       a: "Tomas tu prompt tal cual y lo transforma en una versión más clara y accionable: objetivo, variables, restricciones y formato para respuestas más consistentes.",
     },
     {
+      q: "¿Qué es Optimizer Ultimate / Unlimited?",
+      a: "Es una tool separada dentro del dashboard para usuarios Pro Unlimited. Incluye age-gate y uso controlado diario. Solo entrega prompts optimizados.",
+    },
+    {
       q: "¿Puedo guardar prompts y acceder rápido después?",
       a: "Sí. Dentro del dashboard puedes guardar prompts y consultar tu sección de favoritos/guardados.",
     },
@@ -39,9 +43,7 @@ export default function LandingPage() {
     url: siteUrl,
     description:
       "Repositorio de prompts curados, packs gratis/premium y herramientas como Prompt Optimizer para mejorar prompts en segundos.",
-    offers: [
-      { "@type": "Offer", name: "Acceso", price: "0", priceCurrency: "MXN" },
-    ],
+    offers: [{ "@type": "Offer", name: "Acceso", price: "0", priceCurrency: "MXN" }],
   };
 
   const jsonLdProduct = {
@@ -102,7 +104,7 @@ export default function LandingPage() {
             <Image src="/logo.png" alt="Promptory AI" width={36} height={36} priority />
             <span className="font-semibold tracking-tight text-lg">Promptory AI</span>
             <span className="ml-2 hidden sm:inline-flex text-xs rounded-full border border-white/15 bg-white/5 px-2 py-1 text-white/70">
-              early
+              early access
             </span>
           </Link>
 
@@ -125,6 +127,13 @@ export default function LandingPage() {
             >
               Tools
             </a>
+            <a
+              href="#faq"
+              className="hidden md:inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
+            >
+              FAQ
+            </a>
+
             <Link
               href="/login"
               className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
@@ -152,17 +161,18 @@ export default function LandingPage() {
             <div>
               <p className="inline-flex items-center gap-2 text-xs rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
                 <span className="h-1.5 w-1.5 rounded-full bg-white/60" />
-                Repositorio de prompts + Packs + Prompt Optimizer
+                Repositorio de prompts + Packs + Tools (Optimizer / Ultimate)
               </p>
 
               <h1 className="mt-5 text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
-                Prompts curados listos para usar{" "}
-                <span className="text-white/70">y herramientas para mejorarlos</span>.
+                De “prompts vagos” a{" "}
+                <span className="text-white/70">instrucciones claras y repetibles</span>.
               </h1>
 
               <p className="mt-4 text-white/70 max-w-xl">
-                Entra al dashboard y explora prompts por tipo (free/premium), compra packs premium en fase early
-                y usa el Prompt Optimizer para convertir prompts vagos en instrucciones claras y accionables.
+                Promptory AI vive en un dashboard: exploras prompts curados (free/premium), compras packs early
+                y usas tools como <span className="text-white/90 font-medium">Prompt Optimizer</span> para lograr
+                resultados más consistentes sin estar probando y fallando.
               </p>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -173,21 +183,29 @@ export default function LandingPage() {
                   Entrar y explorar Prompts
                 </Link>
                 <a
-                  href="#flujo"
+                  href="#tools"
                   className="rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-white/85 hover:bg-white/10 transition text-center"
                 >
-                  Ver cómo funciona
+                  Ver demo del Optimizer
                 </a>
+              </div>
+
+              {/* Trust cues (sin inventar números) */}
+              <div className="mt-6 flex flex-wrap gap-2">
+                <TrustPill>Sin instalar nada</TrustPill>
+                <TrustPill>Google login</TrustPill>
+                <TrustPill>Dashboard-first</TrustPill>
+                <TrustPill>Early: packs premium $50 MXN</TrustPill>
               </div>
 
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <MiniStat title="Prompts curados" desc="Por caso de uso" />
-                <MiniStat title="Packs premium" desc="Early: $50 MXN" />
-                <MiniStat title="Optimizer" desc="Mejora en segundos" />
+                <MiniStat title="Packs" desc="Gratis y premium" />
+                <MiniStat title="Optimizer" desc="Antes / Después" />
               </div>
 
               <p className="mt-6 text-xs text-white/50">
-                Todo vive dentro del dashboard: explorar, guardar, comprar y usar tools.
+                Nota: Promptory no genera “contenido final” dentro de la app — entrega prompts listos para ejecutar.
               </p>
             </div>
 
@@ -203,7 +221,7 @@ export default function LandingPage() {
 
                 <h3 className="mt-4 text-lg font-semibold">Un solo lugar para prompts, packs y tools</h3>
                 <p className="mt-2 text-sm text-white/70">
-                  Explora prompts (free/premium), guarda favoritos, revisa compras y abre tools como Prompt Optimizer.
+                  Explora prompts (free/premium), guarda favoritos, revisa compras y abre tools como Optimizer.
                 </p>
 
                 <div className="mt-5 grid gap-3">
@@ -212,16 +230,29 @@ export default function LandingPage() {
                     <div className="grid grid-cols-2 gap-2 text-xs text-white/70">
                       <Pill>Explorar prompts</Pill>
                       <Pill>Mis prompts</Pill>
-                      <Pill>Packs de prompts</Pill>
-                      <Pill>Mis compras</Pill>
-                      <Pill>Mis requests</Pill>
+                      <Pill>Packs</Pill>
+                      <Pill>Compras</Pill>
+                      <Pill>Requests</Pill>
                       <Pill>Tools</Pill>
                     </div>
                   </div>
 
                   <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
-                    <p className="text-xs text-white/50 mb-2">Tool destacada</p>
-                    Prompt Optimizer: pega tu prompt → recibe una versión más específica y accionable.
+                    <p className="text-xs text-white/50 mb-2">Tools</p>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-3">
+                        <span>Prompt Optimizer</span>
+                        <span className="text-xs rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-white/70">
+                          Pro
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between gap-3">
+                        <span>Optimizer Ultimate</span>
+                        <span className="text-xs rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-fuchsia-200">
+                          Unlimited / NSFW
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
@@ -236,7 +267,10 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              <div className="pointer-events-none absolute -inset-6 rounded-[2rem] border border-white/5" aria-hidden="true" />
+              <div
+                className="pointer-events-none absolute -inset-6 rounded-[2rem] border border-white/5"
+                aria-hidden="true"
+              />
             </div>
           </div>
         </div>
@@ -249,7 +283,7 @@ export default function LandingPage() {
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">Qué incluye Promptory AI</h2>
               <p className="mt-2 text-white/70 max-w-2xl">
-                No es “una lista de textos”. Es un sistema: descubrir prompts, colecciones listas para usar y herramientas para mejorarlos.
+                No es “una lista de textos”. Es un sistema: descubres prompts, usas colecciones y optimizas para lograr consistencia.
               </p>
             </div>
             <Link
@@ -262,19 +296,47 @@ export default function LandingPage() {
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <FeatureCard
-              title="Repositorio de prompts"
+              title="Repositorio curado"
               desc="Explora prompts por tipo, herramienta y si son free/premium."
-              cta="Explorar (Dashboard)"
+              cta="Explorar prompts"
             />
             <FeatureCard
-              title="Packs curados"
-              desc="Colecciones listas para usar. Early: packs premium a $50 MXN."
-              cta="Ver packs (Dashboard)"
+              title="Packs listos"
+              desc="Colecciones para ejecutar rápido. Early: premium a $50 MXN."
+              cta="Ver packs"
             />
             <FeatureCard
-              title="Tools"
-              desc="Prompt Optimizer para convertir prompts vagos en instrucciones claras y accionables."
-              cta="Abrir Optimizer (Dashboard)"
+              title="Tools (Optimizer)"
+              desc="Convierte prompts vagos en instrucciones claras con variables, restricciones y formato."
+              cta="Abrir Optimizer"
+            />
+          </div>
+
+          {/* Personas (marketing: quién lo usa) */}
+          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+            <PersonaCard
+              title="Creadores y marketers"
+              bullets={[
+                "Hooks + CTAs consistentes",
+                "Variantes rápidas por tono",
+                "Menos iteraciones fallidas",
+              ]}
+            />
+            <PersonaCard
+              title="Devs y builders"
+              bullets={[
+                "Prompts más técnicos y reproducibles",
+                "Formato de salida controlado",
+                "Plantillas para debugging / specs",
+              ]}
+            />
+            <PersonaCard
+              title="Operación y soporte"
+              bullets={[
+                "Respuestas claras para tickets",
+                "Plantillas por caso de uso",
+                "Menos tiempo redactando",
+              ]}
             />
           </div>
         </div>
@@ -284,14 +346,20 @@ export default function LandingPage() {
       <section id="flujo" className="relative z-10">
         <div className="mx-auto max-w-6xl px-6 py-14">
           <h2 className="text-2xl font-semibold tracking-tight">Cómo funciona</h2>
-          <p className="mt-2 text-white/70 max-w-2xl">
-            Entras una vez y todo está en el dashboard.
-          </p>
+          <p className="mt-2 text-white/70 max-w-2xl">Entras una vez y todo está en el dashboard.</p>
 
           <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
             <StepCard step="1" title="Inicia sesión" desc="Accede al dashboard y a todas las secciones." />
-            <StepCard step="2" title="Explora o compra packs" desc="Encuentra prompts por tipo o compra un pack premium (early $50 MXN)." />
-            <StepCard step="3" title="Optimiza y guarda" desc="Mejora prompts con Optimizer y guarda favoritos para acceso rápido." />
+            <StepCard
+              step="2"
+              title="Explora o compra packs"
+              desc="Encuentra prompts por tipo o compra un pack premium (early $50 MXN)."
+            />
+            <StepCard
+              step="3"
+              title="Optimiza y guarda"
+              desc="Mejora prompts con Optimizer y guarda favoritos para acceso rápido."
+            />
           </div>
         </div>
       </section>
@@ -304,7 +372,8 @@ export default function LandingPage() {
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight">Packs de prompts</h2>
                 <p className="mt-2 text-white/70 max-w-2xl">
-                  Colecciones curadas listas para usar. En fase early, los packs premium cuestan <span className="text-white/90 font-medium">$50 MXN</span> y se pagan con liga de MercadoPago.
+                  Colecciones curadas listas para usar. En fase early, los packs premium cuestan{" "}
+                  <span className="text-white/90 font-medium">$50 MXN</span> y se pagan con liga de MercadoPago.
                 </p>
               </div>
 
@@ -318,13 +387,19 @@ export default function LandingPage() {
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
               <PackCard title="Packs Gratis" desc="Para probar el estilo y la calidad del contenido." tag="free" />
-              <PackCard title="Packs Premium" desc="Colecciones completas listas para ejecutar en tu trabajo." tag="premium" />
+              <PackCard
+                title="Packs Premium"
+                desc="Colecciones completas listas para ejecutar en tu trabajo."
+                tag="premium"
+              />
               <PackCard title="Mis compras" desc="Revisa estado e historial de tus packs comprados." tag="dashboard" />
             </div>
 
-            <p className="mt-6 text-xs text-white/50">
-              Tip: En la landing evita “planes” si tu core es packs. Vende packs y deja suscripción solo si de verdad aporta valor continuo.
-            </p>
+            {/* Mini garantía / reducción de riesgo */}
+            <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/70">
+              <p className="text-xs text-white/50 mb-1">Sin letras chiquitas</p>
+              Compras un pack y lo ves en tu dashboard. No necesitas instalaciones ni pasos raros.
+            </div>
           </div>
         </div>
       </section>
@@ -336,7 +411,7 @@ export default function LandingPage() {
             <div>
               <h2 className="text-2xl font-semibold tracking-tight">Tools</h2>
               <p className="mt-2 text-white/70 max-w-2xl">
-                Usa herramientas para acelerar creación y calidad de prompts. La primera: Prompt Optimizer.
+                La idea es simple: menos “adivinar”, más estructura. Optimizer convierte prompts vagos en instrucciones claras.
               </p>
             </div>
             <Link
@@ -348,12 +423,20 @@ export default function LandingPage() {
           </div>
 
           <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Optimizer before/after */}
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
               <p className="text-xs text-white/60">Ejemplo rápido</p>
               <h3 className="mt-2 text-lg font-semibold">Antes / Después con Prompt Optimizer</h3>
               <p className="mt-2 text-sm text-white/70">
-                Menos “adivinar” y más estructura: objetivo, variables, restricciones y formato de salida.
+                Output estructurado: objetivo, variables, restricciones y formato de salida.
               </p>
+
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Chip>Objetivo</Chip>
+                <Chip>Variables</Chip>
+                <Chip>Restricciones</Chip>
+                <Chip>Formato</Chip>
+              </div>
 
               <div className="mt-5 grid gap-3">
                 <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
@@ -378,28 +461,48 @@ export default function LandingPage() {
               </div>
             </div>
 
+            {/* Ultimate + Generator */}
             <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <p className="text-xs text-white/60">Próximamente</p>
-              <h3 className="mt-2 text-lg font-semibold">Prompt Generator</h3>
+              <p className="text-xs text-white/60">Tier avanzado</p>
+              <h3 className="mt-2 text-lg font-semibold flex items-center gap-2">
+                Optimizer Ultimate
+                <span className="text-xs rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-fuchsia-200">
+                  Pro Unlimited / NSFW
+                </span>
+              </h3>
               <p className="mt-2 text-sm text-white/70">
-                Genera prompts desde cero por objetivo, industria y formato. (Tu dashboard ya lo muestra como próximamente, perfecto.)
+                Tool separada dentro del dashboard para usuarios Pro Unlimited. Incluye age-gate y uso controlado diario.
+                Solo devuelve prompts optimizados.
               </p>
 
-              <div className="mt-6 grid gap-3">
+              <div className="mt-5 grid gap-3">
                 <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
-                  Plantillas por industria + formato + tono, listas para refinar.
+                  <p className="text-xs text-white/50 mb-2">Incluye</p>
+                  <ul className="list-disc pl-5 space-y-1 text-white/70">
+                    <li>Optimizer Unlimited (separado del Optimizer normal)</li>
+                    <li>Auditoría / métricas para runs</li>
+                    <li>Control de uso diario</li>
+                  </ul>
                 </div>
+
                 <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
-                  Lista de variables recomendadas para que el usuario no se bloquee.
+                  <p className="text-xs text-white/50 mb-2">Próximamente</p>
+                  Prompt Generator: prompts desde cero por objetivo, industria y formato.
                 </div>
               </div>
 
-              <div className="mt-6">
+              <div className="mt-6 flex flex-wrap gap-2">
                 <Link
                   href="/login"
-                  className="inline-flex rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-white/85 hover:bg-white/10 transition"
+                  className="inline-flex rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition"
                 >
                   Entrar al Dashboard
+                </Link>
+                <Link
+                  href="/login"
+                  className="inline-flex rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-6 py-3 text-fuchsia-200 hover:bg-fuchsia-500/15 transition"
+                >
+                  Ver Pro Unlimited
                 </Link>
               </div>
             </div>
@@ -411,26 +514,30 @@ export default function LandingPage() {
       <section id="faq" className="relative z-10">
         <div className="mx-auto max-w-6xl px-6 py-14">
           <h2 className="text-2xl font-semibold tracking-tight">Preguntas frecuentes</h2>
-          <p className="mt-2 text-white/70 max-w-2xl">
-            Respuestas rápidas para decidir sin fricción.
-          </p>
+          <p className="mt-2 text-white/70 max-w-2xl">Respuestas rápidas para decidir sin fricción.</p>
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             {faq.map((item) => (
-              <div key={item.q} className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <div key={item.q} className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
                 <p className="font-medium">{item.q}</p>
                 <p className="mt-2 text-sm text-white/70">{item.a}</p>
               </div>
             ))}
           </div>
 
-          <div className="mt-10">
+          <div className="mt-10 flex flex-col sm:flex-row gap-3">
             <Link
               href="/login"
-              className="inline-flex rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition"
+              className="inline-flex justify-center rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition"
             >
               Entrar al Dashboard
             </Link>
+            <a
+              href="#tools"
+              className="inline-flex justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-white/85 hover:bg-white/10 transition"
+            >
+              Ver demo del Optimizer
+            </a>
           </div>
         </div>
       </section>
@@ -462,13 +569,39 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* Sticky CTA (simple y sin JS extra) */}
+      <div className="fixed bottom-4 left-0 right-0 z-50 px-4">
+        <div className="mx-auto max-w-6xl">
+          <div className="rounded-2xl border border-white/10 bg-black/70 backdrop-blur px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="text-sm text-white/80">
+              Explora prompts, packs y tools dentro del dashboard.
+              <span className="ml-2 text-white/60 text-xs">Early packs premium: $50 MXN</span>
+            </div>
+            <div className="flex gap-2">
+              <a
+                href="#tools"
+                className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/85 hover:bg-white/10 transition"
+              >
+                Ver demo
+              </a>
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center rounded-xl bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90 transition"
+              >
+                Entrar al Dashboard
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
     </main>
   );
 }
 
 function MiniStat({ title, desc }: { title: string; desc: string }) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
       <p className="text-sm font-medium">{title}</p>
       <p className="mt-1 text-xs text-white/60">{desc}</p>
     </div>
@@ -506,9 +639,16 @@ function FeatureCard({ title, desc, cta }: { title: string; desc: string; cta: s
   );
 }
 
-function PackCard({ title, desc, tag }: { title: string; desc: string; tag: "free" | "premium" | "dashboard" }) {
-  const badge =
-    tag === "free" ? "Gratis" : tag === "premium" ? "Premium" : "Dashboard";
+function PackCard({
+  title,
+  desc,
+  tag,
+}: {
+  title: string;
+  desc: string;
+  tag: "free" | "premium" | "dashboard";
+}) {
+  const badge = tag === "free" ? "Gratis" : tag === "premium" ? "Premium" : "Dashboard";
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
@@ -534,6 +674,35 @@ function Pill({ children }: { children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center">
       {children}
+    </div>
+  );
+}
+
+function TrustPill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+      {children}
+    </span>
+  );
+}
+
+function Chip({ children }: { children: React.ReactNode }) {
+  return (
+    <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
+      {children}
+    </span>
+  );
+}
+
+function PersonaCard({ title, bullets }: { title: string; bullets: string[] }) {
+  return (
+    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
+      <p className="text-base font-semibold">{title}</p>
+      <ul className="mt-3 list-disc pl-5 space-y-1 text-sm text-white/70">
+        {bullets.map((b) => (
+          <li key={b}>{b}</li>
+        ))}
+      </ul>
     </div>
   );
 }
