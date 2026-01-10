@@ -3,7 +3,7 @@
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { AlertTriangle, ShieldAlert } from "lucide-react";
+import { AlertTriangle, ShieldAlert, ExternalLink } from "lucide-react";
 
 const AGE_KEY = "promptory_age_ok";
 
@@ -41,6 +41,17 @@ type UsageErr = {
   ok: false;
   message: string;
 };
+
+const AI_TARGETS = [
+  { label: "Perchance AI", href: "https://perchance.org/ai-text-to-image-generator" },
+  { label: "Nastia AI", href: "https://www.nastia.ai/tools/uncensored-ai-image-generator" },
+  { label: "Promptchan AI", href: "https://promptchan.com/" },
+  { label: "Candy AI", href: "https://candy.ai/" },
+  { label: "OurDream.AI", href: "https://ourdream.ai/", },
+  { label: "Secrets AI", href: "https://secretdesires.ai/", },
+  { label: "Soulkyn AI", href: "https://soulkyn.com/", },
+  { label: "Grok (xAI)", href: "https://grok.x.ai/", },
+];
 
 export default function OptimizerUnlimitedClient() {
   const [ageOk, setAgeOk] = useState(false);
@@ -157,6 +168,11 @@ export default function OptimizerUnlimitedClient() {
     if (Number.isNaN(d.getTime())) return null;
     return `Reinicia: ${d.toLocaleString()}`;
   }, [usage?.resetsAt]);
+
+  // ✅ Mostrar pills SOLO cuando ya terminó y ya existe optimized
+  const showAiPills = useMemo(() => {
+    return optimized.trim().length > 0 && !pending;
+  }, [optimized, pending]);
 
   // =========
   // ACTIONS
@@ -530,6 +546,37 @@ export default function OptimizerUnlimitedClient() {
           <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200 space-y-2">
             <div className="font-semibold">No se pudo optimizar</div>
             <div className="opacity-90">{state.message}</div>
+          </div>
+        ) : null}
+
+        {/* ✅ Pills (solo cuando ya terminó y ya existe output) */}
+        {showAiPills ? (
+          <div className="rounded-2xl border border-fuchsia-500/20 bg-fuchsia-500/5 p-4 space-y-3">
+            <div className="text-sm font-semibold text-neutral-100">
+              Prompt optimizado para las siguientes IAs
+            </div>
+
+            {/* Scroll horizontal tipo screenshot */}
+            <div className="-mx-1 overflow-x-auto px-1">
+              <div className="flex w-max gap-2 whitespace-nowrap">
+                {AI_TARGETS.map((ai) => (
+                  <a
+                    key={ai.label}
+                    href={ai.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-4 py-2 text-xs font-semibold text-fuchsia-200 hover:bg-fuchsia-500/15 transition"
+                  >
+                    {ai.label}
+                    <ExternalLink className="h-3.5 w-3.5 opacity-80" />
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            <div className="text-xs text-neutral-500">
+              Tip: copia el prompt y pégalo en la IA que prefieras.
+            </div>
           </div>
         ) : null}
 
