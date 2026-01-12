@@ -1,3 +1,4 @@
+// app/dashboard/page.tsx
 import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { getServerSession } from "next-auth";
@@ -51,6 +52,10 @@ function Badge({ children }: { children: React.ReactNode }) {
   );
 }
 
+function getBasicCheckoutUrl() {
+  return (process.env.SUBSCRIPTION_BASIC_CHECKOUT_URL ?? "").trim();
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
 
@@ -61,19 +66,59 @@ export default async function DashboardPage() {
 
   const isAdmin = isAdminEmail(session?.user?.email);
 
-  // ✅ Pro real (DB + fallback env según tu subscription.ts)
+  const userId = (session?.user as any)?.id as string | undefined;
+  const userEmail = session?.user?.email ?? null;
+
+  // ✅ Pro real
   const isPro = await hasActiveSubscription();
 
-  // ✅ Unlimited (Pro Unlimited) - solo para render UI
+  // ✅ Unlimited (render UI)
   const isUnlimited = await hasUnlimitedSubscription();
 
-  // ✅ NUEVO: requests del usuario (pendientes = en revisión)
-  const userEmail = session?.user?.email ?? null;
+  // ✅ requests de prompts
   const pendingMyRequests = userEmail
     ? await prisma.promptRequest.count({
         where: { userEmail, resolvedAt: null },
       })
     : 0;
+
+  const basicCheckoutUrl = getBasicCheckoutUrl();
+
+  // =========================
+  // ✅ Banner de change-requests (cancel / downgrade)
+  // =========================
+  // Regla:
+  // - pending: mostrar siempre
+  // - approved: mostrar solo si es reciente (7 días)
+  // - si downgrade ya se “completó” (ya no es unlimited), NO mostrar
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const changeReq = userId
+    ? await prisma.subscriptionChangeRequest.findFirst({
+        where: {
+          userId,
+          OR: [
+            { status: "pending" },
+            { status: "approved", createdAt: { gte: sevenDaysAgo } },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          type: true, // cancel | downgrade
+          status: true, // pending | approved
+          createdAt: true,
+        },
+      })
+    : null;
+
+  // Si ya no es unlimited, entonces el downgrade “ya se completó” desde el POV de la app.
+  // (En tu flujo: esto pasará cuando tú apruebes/actives Basic por la vía normal de purchase.)
+  const shouldShowChangeBanner =
+    !!changeReq &&
+    (changeReq.status === "pending" ||
+      (changeReq.status === "approved" &&
+        (changeReq.type !== "downgrade" || isUnlimited)));
 
   return (
     <div className="space-y-8">
@@ -98,7 +143,6 @@ export default async function DashboardPage() {
             </div>
           ) : null}
 
-          {/* ✅ Micro-link a Mis requests */}
           <div className="text-xs">
             <Link
               href="/dashboard/requests"
@@ -109,7 +153,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* ✅ Botón Admin solo visible para admins */}
         <div className="flex items-center gap-2">
           {!isPro ? (
             <Link
@@ -137,6 +180,92 @@ export default async function DashboardPage() {
           ) : null}
         </div>
       </div>
+
+      {/* ✅ Banner de cambios (cancel/downgrade) */}
+      {shouldShowChangeBanner ? (
+        <section
+          className={[
+            "rounded-2xl border p-5",
+            changeReq.status === "approved"
+              ? "border-emerald-500/30 bg-emerald-500/10"
+              : "border-amber-500/30 bg-amber-500/10",
+          ].join(" ")}
+        >
+          {changeReq.status === "pending" ? (
+            <>
+              <div className="text-sm font-semibold text-amber-200">
+                Tu solicitud está en revisión
+              </div>
+              <p className="mt-1 text-sm text-amber-200/80">
+                {changeReq.type === "downgrade"
+                  ? "Solicitaste un downgrade a Pro Basic. Un admin la revisará y te notificaremos aquí cuando esté lista."
+                  : "Solicitaste cancelación de tu suscripción. Un admin la revisará y te notificaremos aquí cuando esté lista."}
+              </p>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link
+                  href="/dashboard/upgrade"
+                  className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
+                >
+                  Ver detalles →
+                </Link>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-sm font-semibold text-emerald-200">
+                Tu solicitud fue aprobada ✅
+              </div>
+
+              <p className="mt-1 text-sm text-emerald-200/80">
+                {changeReq.type === "downgrade" ? (
+                  <>
+                    Tu downgrade a Pro Basic ya está listo. Para completar el
+                    cambio, abre el link y activa Pro Basic.{" "}
+                    <span className="block mt-2 text-emerald-200/80">
+                      <b>Importante:</b> tu plan actual sigue siendo{" "}
+                      <b>Pro Unlimited</b> hasta que completes el cambio en{" "}
+                      <b>Mercado Pago</b>.
+                    </span>
+                  </>
+                ) : (
+                  <>
+                    Tu cancelación fue aprobada. Si sigues viendo cobros, revisa
+                    tu suscripción en Mercado Pago.
+                  </>
+                )}
+              </p>
+
+              {changeReq.type === "downgrade" ? (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {basicCheckoutUrl ? (
+                    <a
+                      href={basicCheckoutUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center justify-center rounded-xl bg-emerald-500 px-4 py-2 text-sm font-semibold text-neutral-950 hover:opacity-90 transition"
+                    >
+                      Activar Pro Basic →
+                    </a>
+                  ) : (
+                    <div className="text-xs text-red-200">
+                      Falta configurar{" "}
+                      <b>SUBSCRIPTION_BASIC_CHECKOUT_URL</b> en el env.
+                    </div>
+                  )}
+
+                  <Link
+                    href="/dashboard/upgrade"
+                    className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition"
+                  >
+                    Ir a Suscripción →
+                  </Link>
+                </div>
+              ) : null}
+            </>
+          )}
+        </section>
+      ) : null}
 
       {/* ✅ CTA Pro (solo si NO es pro) */}
       {!isPro ? (
@@ -233,7 +362,6 @@ export default async function DashboardPage() {
           </div>
         </Link>
 
-        {/* ✅ Mis requests + badge */}
         <Link
           href="/dashboard/requests"
           className="rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 hover:bg-neutral-900/70 transition"
@@ -309,13 +437,12 @@ export default async function DashboardPage() {
               ) : null}
             </div>
 
-            {/* Overlay suave si no es pro */}
             {!isPro ? (
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-neutral-950/0 to-neutral-950/30" />
             ) : null}
           </div>
 
-          {/* ✅ Optimizer Ultimate / Unlimited (NSFW) */}
+          {/* Optimizer Ultimate / Unlimited */}
           <div className="relative rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 overflow-hidden">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -326,8 +453,7 @@ export default async function DashboardPage() {
                   </span>
                 </div>
                 <p className="mt-2 text-sm text-neutral-400">
-                  Optimización avanzada (Ultimate). Output: solo prompts
-                  optimizados.
+                  Optimización avanzada (Ultimate). Output: solo prompts optimizados.
                 </p>
               </div>
 
@@ -365,13 +491,12 @@ export default async function DashboardPage() {
               )}
             </div>
 
-            {/* Overlay suave si no es unlimited */}
             {!isUnlimited ? (
               <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-neutral-950/0 to-neutral-950/30" />
             ) : null}
           </div>
 
-          {/* Prompt Generator (placeholder / próximamente) */}
+          {/* Prompt Generator */}
           <div className="relative rounded-2xl border border-neutral-800 bg-neutral-900/40 p-5 overflow-hidden">
             <div className="flex items-start justify-between gap-3">
               <div>

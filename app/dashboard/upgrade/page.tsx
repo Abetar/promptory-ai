@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { getSubscriptionSnapshot } from "@/lib/subscription";
 import UpgradeRequestCardClient from "./UpgradeRequestCardClient";
+import SubscriptionChangeButtonsClient from "./SubscriptionChangeButtonsClient";
 
 export const runtime = "nodejs";
 
@@ -40,13 +41,11 @@ export default async function UpgradePage() {
     );
   }
 
-  // Snapshot (trust-first: pending cuenta como acceso provisional)
   const tier = snap.tier; // "none" | "basic" | "unlimited"
   const status = snap.status; // null | "pending" | "approved" | "rejected" | "cancelled"
 
   const isUnlimited = tier === "unlimited";
   const isBasic = tier === "basic";
-  const isProAny = isUnlimited || isBasic;
 
   // =========================
   // ✅ Unlimited activo (pending/approved)
@@ -69,6 +68,11 @@ export default async function UpgradePage() {
             <li>✓ Acceso al Optimizer “Unlimited” (oculto)</li>
             <li>✓ Sin límites diarios</li>
           </ul>
+
+          {/* ✅ Botones de cambio */}
+          <div className="pt-1">
+            <SubscriptionChangeButtonsClient currentTier={tier} />
+          </div>
 
           <div className="flex flex-wrap gap-2">
             <Link
@@ -95,7 +99,7 @@ export default async function UpgradePage() {
   }
 
   // =========================
-  // ✅ Basic activo (pending/approved) -> mostrar upsell a Unlimited
+  // ✅ Basic activo (pending/approved)
   // =========================
   if (isBasic) {
     return (
@@ -153,6 +157,11 @@ export default async function UpgradePage() {
             </div>
           </div>
 
+          {/* ✅ Botón cancelación (solo aparece, downgrade no) */}
+          <div className="pt-1">
+            <SubscriptionChangeButtonsClient currentTier={tier} />
+          </div>
+
           <div className="flex flex-wrap gap-2">
             <Link
               href="/dashboard"
@@ -171,7 +180,7 @@ export default async function UpgradePage() {
   }
 
   // =========================
-  // ❌ No tiene Pro (none) -> mostrar ambos tiers
+  // ❌ No tiene Pro
   // =========================
   return (
     <div className="mx-auto w-full max-w-3xl px-4 py-10 space-y-6">

@@ -34,6 +34,9 @@ model User {
   subscription          UserSubscription?
   subscriptionPurchases SubscriptionPurchase[]
 
+  // ✅ NUEVO: requests de cancelación/downgrade
+  subscriptionChangeRequests SubscriptionChangeRequest[]
+
   // ✅ Audit / usage events
   auditEvents AuditEvent[]
 
@@ -379,6 +382,43 @@ model SubscriptionPurchase {
   @@index([status])
   @@index([createdAt])
   @@index([tier])
+}
+
+/**
+ * ✅ NUEVO: Requests para cancelar o hacer downgrade (manual/admin)
+ */
+enum SubscriptionChangeType {
+  cancel
+  downgrade
+}
+
+enum ChangeRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+model SubscriptionChangeRequest {
+  id         String               @id @default(cuid())
+  userId     String
+  email      String?
+  type       SubscriptionChangeType
+  fromTier   SubscriptionTier?
+  toTier     SubscriptionTier?
+  status     ChangeRequestStatus  @default(pending)
+
+  note       String?
+  resolvedAt DateTime?
+  resolvedBy String?
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([status, createdAt])
+  @@index([type, createdAt])
 }
 
 /**
