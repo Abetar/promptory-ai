@@ -1,39 +1,45 @@
 import Link from "next/link";
 import Image from "next/image";
 import Script from "next/script";
+import LandingHeader from "@/app/components/LandingHeader";
 
 export default function LandingPage() {
-  // Ajusta si cambias dominio
   const siteUrl = "https://promptory-ai.vercel.app";
 
+  // ✅ Cierra <details> al hacer click en cualquier item del menú.
+  const closeAllDetails = () => {
+    if (typeof document === "undefined") return;
+    document
+      .querySelectorAll("details[data-nav]")
+      .forEach((d) => d.removeAttribute("open"));
+  };
+
+  /**
+   * ✅ FAQ: corto, directo, sin “defensiva”.
+   */
   const faq = [
     {
-      q: "¿Promptory AI es un repositorio o una herramienta?",
-      a: "Ambos. Tienes un repositorio de prompts curados, packs (gratis y premium) y herramientas como Prompt Optimizer dentro del dashboard.",
+      q: "¿Qué es Promptory AI en una sola frase?",
+      a: "Una herramienta para obtener resultados claros de la IA desde el primer intento, convirtiendo prompts vagos en instrucciones accionables.",
     },
     {
-      q: "¿Necesito crear cuenta para ver prompts y packs?",
-      a: "Sí. Al iniciar sesión entras al dashboard, donde puedes explorar prompts, ver packs, guardar favoritos, revisar compras y usar las tools.",
+      q: "¿Qué hace exactamente el Prompt Optimizer?",
+      a: "Estructura tu intención en un prompt listo para ejecutar: objetivo, inputs, restricciones y formato de salida para reducir respuestas genéricas.",
     },
     {
-      q: "¿Cuánto cuestan los packs premium?",
-      a: "En fase early, los packs premium cuestan $50 MXN. El pago se realiza mediante una liga de MercadoPago.",
+      q: "¿Qué papel tiene el repositorio de prompts?",
+      a: "Es el punto de partida: ejemplos reales para no empezar desde cero. El core del producto es optimizar y reutilizar prompts que sí funcionan.",
     },
     {
-      q: "¿Qué hace el Prompt Optimizer?",
-      a: "Tomas tu prompt tal cual y lo transforma en una versión más clara y accionable: objetivo, variables, restricciones y formato para respuestas más consistentes.",
-    },
-    {
-      q: "¿Qué es Optimizer Ultimate / Unlimited?",
-      a: "Es una tool separada dentro del dashboard para usuarios Pro Unlimited. Incluye age-gate y uso controlado diario. Solo entrega prompts optimizados.",
-    },
-    {
-      q: "¿Puedo guardar prompts y acceder rápido después?",
-      a: "Sí. Dentro del dashboard puedes guardar prompts y consultar tu sección de favoritos/guardados.",
+      q: "¿Qué son los Workflows (Prompt Packs)?",
+      a: "Procesos completos para llegar a un resultado específico sin adivinar. No son prompts sueltos: son un sistema de inicio → salida final.",
     },
   ];
 
-  // SEO (sin inventar datos, pero alineado a tu producto)
+  /**
+   * ✅ SEO: alineado a “resultados desde el primer intento”.
+   * Nota: AggregateOffer solo para suscripciones (Free/Pro/Pro Unlimited).
+   */
   const jsonLdSoftwareApp = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
@@ -42,22 +48,13 @@ export default function LandingPage() {
     operatingSystem: "Web",
     url: siteUrl,
     description:
-      "Repositorio de prompts curados, packs gratis/premium y herramientas como Prompt Optimizer para mejorar prompts en segundos.",
-    offers: [{ "@type": "Offer", name: "Acceso", price: "0", priceCurrency: "MXN" }],
-  };
-
-  const jsonLdProduct = {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: "Packs de Prompts Premium (Early)",
-    description:
-      "Colecciones curadas de prompts listos para usar. En fase early, packs premium a $50 MXN mediante MercadoPago.",
+      "Herramienta para obtener resultados claros de la IA desde el primer intento: convierte prompts vagos en instrucciones accionables y repetibles.",
     offers: {
-      "@type": "Offer",
-      price: "50",
+      "@type": "AggregateOffer",
       priceCurrency: "MXN",
-      availability: "https://schema.org/InStock",
-      url: `${siteUrl}/login`,
+      lowPrice: "0",
+      highPrice: "149",
+      offerCount: "3",
     },
   };
 
@@ -79,11 +76,6 @@ export default function LandingPage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftwareApp) }}
       />
       <Script
-        id="ld-product"
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdProduct) }}
-      />
-      <Script
         id="ld-faq"
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq) }}
@@ -98,171 +90,141 @@ export default function LandingPage() {
       </div>
 
       {/* NAVBAR */}
-      <header className="relative z-10">
-        <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-3" aria-label="Ir al inicio">
-            <Image src="/logo.png" alt="Promptory AI" width={36} height={36} priority />
-            <span className="font-semibold tracking-tight text-lg">Promptory AI</span>
-            <span className="ml-2 hidden sm:inline-flex text-xs rounded-full border border-white/15 bg-white/5 px-2 py-1 text-white/70">
-              early access
-            </span>
-          </Link>
-
-          <nav className="flex items-center gap-3" aria-label="Navegación principal">
-            <a
-              href="#producto"
-              className="hidden md:inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
-            >
-              Qué incluye
-            </a>
-            <a
-              href="#packs"
-              className="hidden md:inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
-            >
-              Packs
-            </a>
-            <a
-              href="#tools"
-              className="hidden md:inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
-            >
-              Tools
-            </a>
-            <a
-              href="#faq"
-              className="hidden md:inline-flex rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
-            >
-              FAQ
-            </a>
-
-            <Link
-              href="/login"
-              className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition"
-            >
-              Iniciar sesión
-            </Link>
-            <Link
-              href="/login"
-              className="rounded-xl bg-white text-black px-4 py-2 text-sm font-medium hover:bg-white/90 transition"
-            >
-              Entrar al Dashboard
-            </Link>
-          </nav>
-        </div>
-
-        <div className="mx-auto max-w-6xl px-6">
-          <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
-        </div>
-      </header>
+      <LandingHeader />
 
       {/* HERO */}
       <section className="relative z-10">
         <div className="mx-auto max-w-6xl px-6 pt-14 pb-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
             <div>
-              <p className="inline-flex items-center gap-2 text-xs rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
-                <span className="h-1.5 w-1.5 rounded-full bg-white/60" />
-                Repositorio de prompts + Packs + Tools (Optimizer / Ultimate)
-              </p>
+              {/* ✅ Early access aquí (menos ruido en header) */}
+              <div className="flex flex-wrap gap-2">
+                <span className="inline-flex items-center gap-2 text-xs rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
+                  <span className="h-1.5 w-1.5 rounded-full bg-white/60" />
+                  Menos ensayo-error. Más resultados concretos.
+                </span>
+                <span className="inline-flex text-xs rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
+                  early access
+                </span>
+              </div>
 
               <h1 className="mt-5 text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
-                De “prompts vagos” a{" "}
-                <span className="text-white/70">instrucciones claras y repetibles</span>.
+                Obtén resultados claros de la IA{" "}
+                <span className="text-white/70">desde el primer intento</span>.
               </h1>
 
               <p className="mt-4 text-white/70 max-w-xl">
-                Promptory AI vive en un dashboard: exploras prompts curados (free/premium), compras packs early
-                y usas tools como <span className="text-white/90 font-medium">Prompt Optimizer</span> para lograr
-                resultados más consistentes sin estar probando y fallando.
+                Promptory toma tu intención y la vuelve una instrucción
+                ejecutable: reduce respuestas genéricas y te evita iteraciones
+                inútiles.
               </p>
+
+              <div className="mt-6 grid gap-2 text-sm text-white/75">
+                <div className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60" />
+                  Menos respuestas vagas.
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60" />
+                  Menos “ajustes” sin rumbo.
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60" />
+                  Más prompts repetibles que sí funcionan.
+                </div>
+              </div>
 
               <div className="mt-8 flex flex-col sm:flex-row gap-3">
                 <Link
                   href="/login"
                   className="rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition text-center"
                 >
-                  Entrar y explorar Prompts
+                  Optimiza tu primer prompt gratis
                 </Link>
                 <a
-                  href="#tools"
+                  href="#optimizer"
                   className="rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-white/85 hover:bg-white/10 transition text-center"
                 >
-                  Ver demo del Optimizer
+                  Ver antes / después
                 </a>
               </div>
 
-              {/* Trust cues (sin inventar números) */}
               <div className="mt-6 flex flex-wrap gap-2">
                 <TrustPill>Sin instalar nada</TrustPill>
                 <TrustPill>Google login</TrustPill>
-                <TrustPill>Dashboard-first</TrustPill>
-                <TrustPill>Early: packs premium $50 MXN</TrustPill>
+                <TrustPill>Optimiza y reutiliza</TrustPill>
+                <TrustPill>Menos fricción mental</TrustPill>
               </div>
-
-              <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <MiniStat title="Prompts curados" desc="Por caso de uso" />
-                <MiniStat title="Packs" desc="Gratis y premium" />
-                <MiniStat title="Optimizer" desc="Antes / Después" />
-              </div>
-
-              <p className="mt-6 text-xs text-white/50">
-                Nota: Promptory no genera “contenido final” dentro de la app — entrega prompts listos para ejecutar.
-              </p>
             </div>
 
-            {/* Right card mock (Dashboard flow) */}
+            {/* Right card mock */}
             <div className="relative">
               <div className="rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
                 <div className="flex items-center justify-between">
                   <span className="text-xs rounded-full border border-white/15 bg-white/5 px-2 py-1 text-white/70">
+                    Prompt Optimizer (core)
+                  </span>
+                  <span className="text-xs text-white/50">
                     Dentro del Dashboard
                   </span>
-                  <span className="text-xs text-white/50">Promptory AI</span>
                 </div>
 
-                <h3 className="mt-4 text-lg font-semibold">Un solo lugar para prompts, packs y tools</h3>
+                <h3 className="mt-4 text-lg font-semibold">
+                  Aquí es donde tus prompts dejan de fallar
+                </h3>
                 <p className="mt-2 text-sm text-white/70">
-                  Explora prompts (free/premium), guarda favoritos, revisa compras y abre tools como Optimizer.
+                  Convierte una intención vaga en una instrucción operacional
+                  (repetible y con formato de salida).
                 </p>
 
                 <div className="mt-5 grid gap-3">
-                  <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
-                    <p className="text-xs text-white/50 mb-2">Secciones</p>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-white/70">
-                      <Pill>Explorar prompts</Pill>
-                      <Pill>Mis prompts</Pill>
-                      <Pill>Packs</Pill>
-                      <Pill>Compras</Pill>
-                      <Pill>Requests</Pill>
-                      <Pill>Tools</Pill>
-                    </div>
+                  <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
+                    <p className="text-xs text-white/50 mb-2">Antes</p>
+                    Hazme un post para redes sobre mi servicio.
                   </div>
 
                   <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
-                    <p className="text-xs text-white/50 mb-2">Tools</p>
+                    <p className="text-xs text-white/50 mb-2">
+                      Después (listo para ejecutar)
+                    </p>
                     <div className="space-y-2">
-                      <div className="flex items-center justify-between gap-3">
-                        <span>Prompt Optimizer</span>
-                        <span className="text-xs rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-white/70">
-                          Pro
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between gap-3">
-                        <span>Optimizer Ultimate</span>
-                        <span className="text-xs rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-fuchsia-200">
-                          Unlimited / NSFW
-                        </span>
-                      </div>
+                      <p>
+                        <span className="text-white/60">Rol:</span> Copywriter
+                        senior
+                      </p>
+                      <p>
+                        <span className="text-white/60">Objetivo:</span> Crear 5
+                        variantes de post para {"{AUDIENCIA}"} sobre{" "}
+                        {"{SERVICIO}"}.
+                      </p>
+                      <p>
+                        <span className="text-white/60">Inputs:</span> contexto{" "}
+                        {"{CONTEXTO}"} / beneficio {"{BENEFICIO}"} / objeción{" "}
+                        {"{OBJECION}"}.
+                      </p>
+                      <p>
+                        <span className="text-white/60">Restricciones:</span>{" "}
+                        sin jerga, máx. 120 palabras, tono {"{TONO}"}.
+                      </p>
+                      <p>
+                        <span className="text-white/60">
+                          Formato (obligatorio):
+                        </span>{" "}
+                        lista numerada con Hook → Beneficio → Objeción → CTA.
+                      </p>
                     </div>
                   </div>
                 </div>
 
                 <div className="mt-5 flex items-center justify-between">
-                  <span className="text-xs text-white/50">Login → Dashboard</span>
+                  <span className="text-xs text-white/50">
+                    Login → Optimizer
+                  </span>
                   <Link
                     href="/login"
                     className="rounded-xl bg-white text-black px-4 py-2 text-sm font-medium hover:bg-white/90 transition"
                   >
-                    Entrar
+                    Probar
                   </Link>
                 </div>
               </div>
@@ -276,104 +238,217 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PRODUCT */}
-      <section id="producto" className="relative z-10">
-        <div className="mx-auto max-w-6xl px-6 py-10">
+      {/* OPTIMIZER */}
+      <section id="optimizer" className="scroll-mt-24 relative z-10">
+        <div className="mx-auto max-w-6xl px-6 pb-10">
           <div className="flex items-end justify-between gap-6 flex-wrap">
             <div>
-              <h2 className="text-2xl font-semibold tracking-tight">Qué incluye Promptory AI</h2>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Prompt Optimizer
+              </h2>
               <p className="mt-2 text-white/70 max-w-2xl">
-                No es “una lista de textos”. Es un sistema: descubres prompts, usas colecciones y optimizas para lograr consistencia.
+                Convierte intención vaga → instrucción ejecutable. Menos
+                ensayo-error, más resultados concretos.
               </p>
             </div>
             <Link
               href="/login"
               className="rounded-2xl border border-white/15 bg-white/5 px-5 py-2 text-sm text-white/85 hover:bg-white/10 transition"
             >
-              Entrar al dashboard
+              Optimizar un prompt
+            </Link>
+          </div>
+
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-xs text-white/60">Qué hace</p>
+              <h3 className="mt-2 text-lg font-semibold">
+                Hace tu prompt repetible
+              </h3>
+              <p className="mt-2 text-sm text-white/70">
+                Te fuerza a definir lo que normalmente queda ambiguo: objetivo,
+                inputs, restricciones y salida.
+              </p>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <Chip>Objetivo</Chip>
+                <Chip>Inputs</Chip>
+                <Chip>Restricciones</Chip>
+                <Chip>Salida</Chip>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
+              <p className="text-xs text-white/60">Lo que cambia</p>
+              <h3 className="mt-2 text-lg font-semibold">
+                De “prueba y error” → a trabajo real
+              </h3>
+              <p className="mt-2 text-sm text-white/70">
+                Optimiza una vez, reutiliza después. Menos fricción mental cada
+                vez que vuelves a pedir algo a la IA.
+              </p>
+              <div className="mt-5">
+                <Link
+                  href="/login"
+                  className="inline-flex rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition"
+                >
+                  Optimiza tu primer prompt
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          {/* Upsell silencioso (NSFW) */}
+          <div className="mt-6 rounded-3xl border border-white/10 bg-black/40 p-6">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs text-white/50">Opcional (upsell)</p>
+                <p className="mt-1 font-semibold">
+                  Optimizer Ultimate{" "}
+                  <span className="ml-2 text-xs rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-fuchsia-200">
+                    Pro Unlimited
+                  </span>
+                </p>
+                <p className="mt-2 text-sm text-white/70 max-w-2xl">
+                  Tier cerrado con age-gate y uso controlado diario. No es el
+                  foco del producto.
+                </p>
+              </div>
+              <Link
+                href="/login"
+                className="shrink-0 inline-flex rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-5 py-2 text-sm text-fuchsia-200 hover:bg-fuchsia-500/15 transition"
+              >
+                Ver Pro Unlimited
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* PRICING */}
+      <section id="pricing" className="scroll-mt-24 relative z-10">
+        <div className="mx-auto max-w-6xl px-6 pb-14">
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Planes simples
+                </h2>
+                <p className="mt-2 text-white/70 max-w-2xl">
+                  Empieza gratis. Si quieres resultados más limpios y
+                  consistentes, sube a Pro.
+                </p>
+              </div>
+              <Link
+                href="/login"
+                className="rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition text-center"
+              >
+                Empezar gratis
+              </Link>
+            </div>
+
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="rounded-3xl border border-white/10 bg-black/40 p-6">
+                <p className="text-xs text-white/50">Free</p>
+                <p className="mt-2 text-base font-semibold">
+                  Para probar el flujo
+                </p>
+                <p className="mt-2 text-sm text-white/70">
+                  <span className="font-medium text-white/85">
+                    10 optimizaciones/día
+                  </span>{" "}
+                  (básicas).
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/40 p-6">
+                <p className="text-xs text-white/50">Pro</p>
+                <p className="mt-2 text-base font-semibold">
+                  Resultados más limpios
+                </p>
+                <p className="mt-2 text-sm text-white/70">
+                  Optimización avanzada.{" "}
+                  <span className="font-medium text-white/85">
+                    Desde $99 MXN/mes
+                  </span>
+                  .
+                </p>
+              </div>
+
+              <div className="rounded-3xl border border-white/10 bg-black/40 p-6">
+                <p className="text-xs text-white/50">Pro Unlimited</p>
+                <p className="mt-2 text-base font-semibold">
+                  Upsell cerrado (NSFW)
+                </p>
+                <p className="mt-2 text-sm text-white/70">
+                  Ultimate + age-gate.{" "}
+                  <span className="font-medium text-white/85">
+                    Desde $149 MXN/mes
+                  </span>
+                  .
+                </p>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs text-white/50">
+              Nota: Promptory entrega prompts listos para ejecutar en tu IA
+              favorita (no genera el contenido final dentro de la app).
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* REPOSITORIO */}
+      <section id="repositorio" className="scroll-mt-24 relative z-10">
+        <div className="mx-auto max-w-6xl px-6 pb-14">
+          <div className="flex items-end justify-between gap-6 flex-wrap">
+            <div>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                Ejemplos para no empezar desde cero
+              </h2>
+              <p className="mt-2 text-white/70 max-w-2xl">
+                Toma un ejemplo real como base y luego optimízalo para tu caso.
+              </p>
+            </div>
+            <Link
+              href="/login"
+              className="rounded-2xl border border-white/15 bg-white/5 px-5 py-2 text-sm text-white/85 hover:bg-white/10 transition"
+            >
+              Ver ejemplos
             </Link>
           </div>
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <FeatureCard
-              title="Repositorio curado"
-              desc="Explora prompts por tipo, herramienta y si son free/premium."
-              cta="Explorar prompts"
+              title="Explora por caso de uso"
+              desc="Encuentra ejemplos por tipo de trabajo (marketing, dev, soporte, etc.)."
+              cta="Abrir ejemplos"
             />
             <FeatureCard
-              title="Packs listos"
-              desc="Colecciones para ejecutar rápido. Early: premium a $50 MXN."
-              cta="Ver packs"
+              title="Copia, adapta, optimiza"
+              desc="Empieza con un ejemplo y conviértelo en una instrucción accionable."
+              cta="Optimizar ahora"
             />
             <FeatureCard
-              title="Tools (Optimizer)"
-              desc="Convierte prompts vagos en instrucciones claras con variables, restricciones y formato."
-              cta="Abrir Optimizer"
-            />
-          </div>
-
-          {/* Personas (marketing: quién lo usa) */}
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <PersonaCard
-              title="Creadores y marketers"
-              bullets={[
-                "Hooks + CTAs consistentes",
-                "Variantes rápidas por tono",
-                "Menos iteraciones fallidas",
-              ]}
-            />
-            <PersonaCard
-              title="Devs y builders"
-              bullets={[
-                "Prompts más técnicos y reproducibles",
-                "Formato de salida controlado",
-                "Plantillas para debugging / specs",
-              ]}
-            />
-            <PersonaCard
-              title="Operación y soporte"
-              bullets={[
-                "Respuestas claras para tickets",
-                "Plantillas por caso de uso",
-                "Menos tiempo redactando",
-              ]}
+              title="Guárdalo y reutiliza"
+              desc="Si algo funciona, no lo vuelvas a construir desde cero."
+              cta="Guardar prompts"
             />
           </div>
         </div>
       </section>
 
-      {/* FLOW */}
-      <section id="flujo" className="relative z-10">
-        <div className="mx-auto max-w-6xl px-6 py-14">
-          <h2 className="text-2xl font-semibold tracking-tight">Cómo funciona</h2>
-          <p className="mt-2 text-white/70 max-w-2xl">Entras una vez y todo está en el dashboard.</p>
-
-          <div className="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StepCard step="1" title="Inicia sesión" desc="Accede al dashboard y a todas las secciones." />
-            <StepCard
-              step="2"
-              title="Explora o compra packs"
-              desc="Encuentra prompts por tipo o compra un pack premium (early $50 MXN)."
-            />
-            <StepCard
-              step="3"
-              title="Optimiza y guarda"
-              desc="Mejora prompts con Optimizer y guarda favoritos para acceso rápido."
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* PACKS */}
-      <section id="packs" className="relative z-10">
+      {/* PROMPT BASE */}
+      <section id="prompt-base" className="scroll-mt-24 relative z-10">
         <div className="mx-auto max-w-6xl px-6 pb-14">
           <div className="rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Packs de prompts</h2>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Tu Prompt Base
+                </h2>
                 <p className="mt-2 text-white/70 max-w-2xl">
-                  Colecciones curadas listas para usar. En fase early, los packs premium cuestan{" "}
-                  <span className="text-white/90 font-medium">$50 MXN</span> y se pagan con liga de MercadoPago.
+                  Tus mejores prompts viven aquí. Menos fricción mental cada vez
+                  que vuelves a pedir algo a la IA.
                 </p>
               </div>
 
@@ -381,144 +456,91 @@ export default function LandingPage() {
                 href="/login"
                 className="rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition text-center"
               >
-                Ver packs en Dashboard
+                Guardar mi Prompt Base
               </Link>
             </div>
 
-            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
-              <PackCard title="Packs Gratis" desc="Para probar el estilo y la calidad del contenido." tag="free" />
-              <PackCard
-                title="Packs Premium"
-                desc="Colecciones completas listas para ejecutar en tu trabajo."
-                tag="premium"
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <MiniStat title="Hábito" desc="Un lugar fijo para tus prompts" />
+              <MiniStat
+                title="Switching cost"
+                desc="Más difícil volver atrás"
               />
-              <PackCard title="Mis compras" desc="Revisa estado e historial de tus packs comprados." tag="dashboard" />
-            </div>
-
-            {/* Mini garantía / reducción de riesgo */}
-            <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/70">
-              <p className="text-xs text-white/50 mb-1">Sin letras chiquitas</p>
-              Compras un pack y lo ves en tu dashboard. No necesitas instalaciones ni pasos raros.
+              <MiniStat
+                title="Reutilización"
+                desc="Optimiza una vez, usa muchas"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* TOOLS (Optimizer demo) */}
-      <section id="tools" className="relative z-10">
+      {/* PACKS */}
+      <section id="packs" className="scroll-mt-24 relative z-10">
         <div className="mx-auto max-w-6xl px-6 pb-14">
-          <div className="flex items-end justify-between gap-6 flex-wrap">
-            <div>
-              <h2 className="text-2xl font-semibold tracking-tight">Tools</h2>
-              <p className="mt-2 text-white/70 max-w-2xl">
-                La idea es simple: menos “adivinar”, más estructura. Optimizer convierte prompts vagos en instrucciones claras.
-              </p>
-            </div>
-            <Link
-              href="/login"
-              className="rounded-2xl border border-white/15 bg-white/5 px-5 py-2 text-sm text-white/85 hover:bg-white/10 transition"
-            >
-              Abrir tools en Dashboard
-            </Link>
-          </div>
-
-          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Optimizer before/after */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <p className="text-xs text-white/60">Ejemplo rápido</p>
-              <h3 className="mt-2 text-lg font-semibold">Antes / Después con Prompt Optimizer</h3>
-              <p className="mt-2 text-sm text-white/70">
-                Output estructurado: objetivo, variables, restricciones y formato de salida.
-              </p>
-
-              <div className="mt-4 flex flex-wrap gap-2">
-                <Chip>Objetivo</Chip>
-                <Chip>Variables</Chip>
-                <Chip>Restricciones</Chip>
-                <Chip>Formato</Chip>
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+              <div>
+                <h2 className="text-2xl font-semibold tracking-tight">
+                  Workflows (Prompt Packs)
+                </h2>
+                <p className="mt-2 text-white/70 max-w-2xl">
+                  Sistemas completos para llegar a un resultado específico sin
+                  adivinar (no consumibles en 5 minutos).
+                </p>
               </div>
 
-              <div className="mt-5 grid gap-3">
-                <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
-                  <p className="text-xs text-white/50 mb-2">Antes</p>
-                  Hazme un post para Instagram sobre mi servicio.
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
-                  <p className="text-xs text-white/50 mb-2">Después</p>
-                  Actúa como copywriter. Crea 5 variantes para un post sobre {"{SERVICIO}"} para {"{AUDIENCIA}"}.
-                  Incluye: hook, beneficios, objeción y CTA. Tono: {"{TONO}"}. Formato: lista numerada.
-                </div>
-              </div>
-
-              <div className="mt-5">
-                <Link
-                  href="/login"
-                  className="inline-flex rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition"
-                >
-                  Probar Optimizer (Dashboard)
-                </Link>
-              </div>
+              <Link
+                href="/login"
+                className="rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition text-center"
+              >
+                Ver workflows en Dashboard
+              </Link>
             </div>
 
-            {/* Ultimate + Generator */}
-            <div className="rounded-3xl border border-white/10 bg-white/5 p-6">
-              <p className="text-xs text-white/60">Tier avanzado</p>
-              <h3 className="mt-2 text-lg font-semibold flex items-center gap-2">
-                Optimizer Ultimate
-                <span className="text-xs rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-0.5 text-fuchsia-200">
-                  Pro Unlimited / NSFW
-                </span>
-              </h3>
-              <p className="mt-2 text-sm text-white/70">
-                Tool separada dentro del dashboard para usuarios Pro Unlimited. Incluye age-gate y uso controlado diario.
-                Solo devuelve prompts optimizados.
-              </p>
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+              <PackCard
+                title="Workflows gratis"
+                desc="Para probar el enfoque de proceso completo."
+                tag="free"
+              />
+              <PackCard
+                title="Workflows premium"
+                desc="Para tu trabajo real: proceso completo, reusable, y con resultado claro."
+                tag="premium"
+              />
+              <PackCard
+                title="Mis compras"
+                desc="Acceso y estado de tus workflows."
+                tag="dashboard"
+              />
+            </div>
 
-              <div className="mt-5 grid gap-3">
-                <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
-                  <p className="text-xs text-white/50 mb-2">Incluye</p>
-                  <ul className="list-disc pl-5 space-y-1 text-white/70">
-                    <li>Optimizer Unlimited (separado del Optimizer normal)</li>
-                    <li>Auditoría / métricas para runs</li>
-                    <li>Control de uso diario</li>
-                  </ul>
-                </div>
-
-                <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
-                  <p className="text-xs text-white/50 mb-2">Próximamente</p>
-                  Prompt Generator: prompts desde cero por objetivo, industria y formato.
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-wrap gap-2">
-                <Link
-                  href="/login"
-                  className="inline-flex rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition"
-                >
-                  Entrar al Dashboard
-                </Link>
-                <Link
-                  href="/login"
-                  className="inline-flex rounded-2xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-6 py-3 text-fuchsia-200 hover:bg-fuchsia-500/15 transition"
-                >
-                  Ver Pro Unlimited
-                </Link>
-              </div>
+            <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/70">
+              <p className="text-xs text-white/50 mb-1">Regla simple</p>
+              Workflows te dan dirección. El Optimizer es el motor para subir la
+              calidad del resultado.
             </div>
           </div>
         </div>
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="relative z-10">
+      <section id="faq" className="scroll-mt-24 relative z-10">
         <div className="mx-auto max-w-6xl px-6 py-14">
-          <h2 className="text-2xl font-semibold tracking-tight">Preguntas frecuentes</h2>
-          <p className="mt-2 text-white/70 max-w-2xl">Respuestas rápidas para decidir sin fricción.</p>
+          <h2 className="text-2xl font-semibold tracking-tight">
+            Preguntas frecuentes
+          </h2>
+          <p className="mt-2 text-white/70 max-w-2xl">
+            Respuestas rápidas para decidir sin fricción.
+          </p>
 
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
             {faq.map((item) => (
-              <div key={item.q} className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
+              <div
+                key={item.q}
+                className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition"
+              >
                 <p className="font-medium">{item.q}</p>
                 <p className="mt-2 text-sm text-white/70">{item.a}</p>
               </div>
@@ -530,13 +552,13 @@ export default function LandingPage() {
               href="/login"
               className="inline-flex justify-center rounded-2xl bg-white text-black px-6 py-3 font-medium hover:bg-white/90 transition"
             >
-              Entrar al Dashboard
+              Optimiza tu primer prompt
             </Link>
             <a
-              href="#tools"
+              href="#optimizer"
               className="inline-flex justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-white/85 hover:bg-white/10 transition"
             >
-              Ver demo del Optimizer
+              Ver antes / después
             </a>
           </div>
         </div>
@@ -548,10 +570,18 @@ export default function LandingPage() {
           <div className="h-px w-full bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           <div className="pt-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <Image src="/logo.png" alt="Promptory AI" width={28} height={28} />
+              <Image
+                src="/logo.jpeg"
+                alt="Promptory AI"
+                width={100}
+                height={100}
+                priority
+              />
               <div>
                 <p className="text-sm font-medium">Promptory AI</p>
-                <p className="text-xs text-white/50">© {new Date().getFullYear()}</p>
+                <p className="text-xs text-white/50">
+                  © {new Date().getFullYear()}
+                </p>
               </div>
             </div>
 
@@ -562,7 +592,10 @@ export default function LandingPage() {
               <Link className="hover:text-white transition" href="/privacy">
                 Aviso de privacidad
               </Link>
-              <a className="hover:text-white transition" href="mailto:agsolutions96@gmail.com">
+              <a
+                className="hover:text-white transition"
+                href="mailto:agsolutions96@gmail.com"
+              >
                 Soporte
               </a>
             </div>
@@ -570,26 +603,28 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* Sticky CTA (simple y sin JS extra) */}
+      {/* Sticky CTA (más compacto en mobile) */}
       <div className="fixed bottom-4 left-0 right-0 z-50 px-4">
         <div className="mx-auto max-w-6xl">
-          <div className="rounded-2xl border border-white/10 bg-black/70 backdrop-blur px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+          <div className="rounded-2xl border border-white/10 bg-black/70 backdrop-blur px-4 py-2 sm:py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
             <div className="text-sm text-white/80">
-              Explora prompts, packs y tools dentro del dashboard.
-              <span className="ml-2 text-white/60 text-xs">Early packs premium: $50 MXN</span>
+              Optimiza tu prompt y obtén un resultado claro.
+              <span className="ml-2 text-white/60 text-xs hidden sm:inline">
+                Sin ensayo-error infinito.
+              </span>
             </div>
             <div className="flex gap-2">
               <a
-                href="#tools"
+                href="#optimizer"
                 className="inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/85 hover:bg-white/10 transition"
               >
-                Ver demo
+                Antes / después
               </a>
               <Link
                 href="/login"
                 className="inline-flex items-center justify-center rounded-xl bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90 transition"
               >
-                Entrar al Dashboard
+                Probar
               </Link>
             </div>
           </div>
@@ -599,6 +634,7 @@ export default function LandingPage() {
   );
 }
 
+/** Components */
 function MiniStat({ title, desc }: { title: string; desc: string }) {
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-4 hover:bg-white/10 transition">
@@ -608,21 +644,15 @@ function MiniStat({ title, desc }: { title: string; desc: string }) {
   );
 }
 
-function StepCard({ step, title, desc }: { step: string; title: string; desc: string }) {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
-      <div className="flex items-center gap-3">
-        <span className="text-xs rounded-full border border-white/15 bg-white/5 px-2 py-1 text-white/70">
-          Paso {step}
-        </span>
-        <p className="text-base font-semibold">{title}</p>
-      </div>
-      <p className="mt-3 text-sm text-white/70">{desc}</p>
-    </div>
-  );
-}
-
-function FeatureCard({ title, desc, cta }: { title: string; desc: string; cta: string }) {
+function FeatureCard({
+  title,
+  desc,
+  cta,
+}: {
+  title: string;
+  desc: string;
+  cta: string;
+}) {
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
       <p className="text-base font-semibold">{title}</p>
@@ -648,7 +678,8 @@ function PackCard({
   desc: string;
   tag: "free" | "premium" | "dashboard";
 }) {
-  const badge = tag === "free" ? "Gratis" : tag === "premium" ? "Premium" : "Dashboard";
+  const badge =
+    tag === "free" ? "Gratis" : tag === "premium" ? "Premium" : "Dashboard";
 
   return (
     <div className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
@@ -670,14 +701,6 @@ function PackCard({
   );
 }
 
-function Pill({ children }: { children: React.ReactNode }) {
-  return (
-    <div className="rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-center">
-      {children}
-    </div>
-  );
-}
-
 function TrustPill({ children }: { children: React.ReactNode }) {
   return (
     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
@@ -691,18 +714,5 @@ function Chip({ children }: { children: React.ReactNode }) {
     <span className="inline-flex items-center rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-white/70">
       {children}
     </span>
-  );
-}
-
-function PersonaCard({ title, bullets }: { title: string; bullets: string[] }) {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-6 hover:bg-white/10 transition">
-      <p className="text-base font-semibold">{title}</p>
-      <ul className="mt-3 list-disc pl-5 space-y-1 text-sm text-white/70">
-        {bullets.map((b) => (
-          <li key={b}>{b}</li>
-        ))}
-      </ul>
-    </div>
   );
 }
