@@ -21,17 +21,17 @@ const ogImage = "/og.png";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
+  // ✅ Cambiamos el enfoque: resultado > catálogo
   title: {
-    default: "Promptory AI — Prompts curados, Packs y Prompt Optimizer",
+    default: "Promptory AI — Resultados claros desde el primer intento",
     template: "%s | Promptory AI",
   },
 
   description:
-    "Repositorio de prompts curados y packs (gratis y premium) para distintas herramientas de IA. Encuentra plantillas por caso de uso y mejora tus prompts en segundos con Prompt Optimizer.",
+    "Deja de iterar con la IA. Promptory convierte prompts vagos en instrucciones ejecutables (objetivo, inputs, restricciones y formato) para obtener salida utilizable más rápido.",
 
   applicationName: siteName,
   category: "technology",
-
   alternates: { canonical: "/" },
 
   robots: {
@@ -49,9 +49,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: siteUrl,
-    title: "Promptory AI — Prompts curados, Packs y Prompt Optimizer",
+    title: "Promptory AI — Resultados claros desde el primer intento",
     description:
-      "Explora prompts curados por caso de uso, compra packs premium y optimiza tus prompts en segundos.",
+      "Convierte prompts vagos en instrucciones ejecutables para dejar el ensayo-error y obtener salida utilizable más rápido.",
     siteName,
     locale: "es_MX",
     images: [{ url: ogImage, width: 1200, height: 630, alt: "Promptory AI" }],
@@ -59,9 +59,9 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Promptory AI — Prompts curados, Packs y Prompt Optimizer",
+    title: "Promptory AI — Resultados claros desde el primer intento",
     description:
-      "Repositorio de prompts + packs (gratis/premium) + herramienta para optimizarlos en segundos.",
+      "Menos respuestas genéricas. Más salida utilizable. Optimiza prompts con objetivo, inputs, restricciones y formato.",
     images: [ogImage],
   },
 
