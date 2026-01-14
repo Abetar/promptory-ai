@@ -20,19 +20,19 @@ export default function LandingPage() {
   const faq = [
     {
       q: "¿Qué es Promptory AI en una sola frase?",
-      a: "Una herramienta para obtener resultados claros de la IA desde el primer intento, convirtiendo prompts vagos en instrucciones accionables.",
+      a: "Obtén resultados claros de la IA desde el primer intento: convierte prompts vagos en instrucciones ejecutables y reutilizables.",
     },
     {
       q: "¿Qué hace exactamente el Prompt Optimizer?",
-      a: "Estructura tu intención en un prompt listo para ejecutar: objetivo, inputs, restricciones y formato de salida para reducir respuestas genéricas.",
+      a: "Toma tu intención y la vuelve un prompt operativo con objetivo, inputs, restricciones y formato de salida. Menos respuestas genéricas, más resultados concretos.",
     },
     {
       q: "¿Qué papel tiene el repositorio de prompts?",
-      a: "Es el punto de partida: ejemplos reales para no empezar desde cero. El core del producto es optimizar y reutilizar prompts que sí funcionan.",
+      a: "Es el punto de partida para no empezar desde cero: ejemplos reales que puedes adaptar y optimizar.",
     },
     {
       q: "¿Qué son los Workflows (Prompt Packs)?",
-      a: "Procesos completos para llegar a un resultado específico sin adivinar. No son prompts sueltos: son un sistema de inicio → salida final.",
+      a: "Workflows completos para llegar a un resultado específico sin adivinar. No son prompts sueltos: son un sistema de inicio → salida final.",
     },
   ];
 
@@ -48,7 +48,7 @@ export default function LandingPage() {
     operatingSystem: "Web",
     url: siteUrl,
     description:
-      "Herramienta para obtener resultados claros de la IA desde el primer intento: convierte prompts vagos en instrucciones accionables y repetibles.",
+      "Herramienta para obtener resultados claros de la IA desde el primer intento: convierte prompts vagos en instrucciones ejecutables y repetibles.",
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "MXN",
@@ -101,36 +101,41 @@ export default function LandingPage() {
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center gap-2 text-xs rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
                   <span className="h-1.5 w-1.5 rounded-full bg-white/60" />
-                  Menos ensayo-error. Más resultados concretos.
+                  Deja el ensayo-error. Obtén algo útil.
                 </span>
                 <span className="inline-flex text-xs rounded-full border border-white/15 bg-white/5 px-3 py-1 text-white/70">
                   early access
                 </span>
               </div>
 
+              {/* ✅ Headline más agresivo: dolor → resultado */}
               <h1 className="mt-5 text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
-                Obtén resultados claros de la IA{" "}
+                Deja de perder tiempo{" "}
+                <span className="text-white/70">peleando con la IA</span>.
+                <br />
+                Obtén resultados claros{" "}
                 <span className="text-white/70">desde el primer intento</span>.
               </h1>
 
+              {/* ✅ Subheadline más corto y más “outcome” */}
               <p className="mt-4 text-white/70 max-w-xl">
-                Promptory toma tu intención y la vuelve una instrucción
-                ejecutable: reduce respuestas genéricas y te evita iteraciones
-                inútiles.
+                Convierte prompts vagos en instrucciones ejecutables con formato,
+                restricciones e inputs. Menos respuestas genéricas. Más output
+                usable.
               </p>
 
               <div className="mt-6 grid gap-2 text-sm text-white/75">
                 <div className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60" />
-                  Menos respuestas vagas.
+                  Menos respuestas vagas que “suenan bien” pero no sirven.
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60" />
-                  Menos “ajustes” sin rumbo.
+                  Menos ajustes sin rumbo para “ver si ahora sí”.
                 </div>
                 <div className="flex items-start gap-2">
                   <span className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60" />
-                  Más prompts repetibles que sí funcionan.
+                  Más prompts repetibles que puedes reutilizar y mejorar.
                 </div>
               </div>
 
@@ -152,7 +157,7 @@ export default function LandingPage() {
               <div className="mt-6 flex flex-wrap gap-2">
                 <TrustPill>Sin instalar nada</TrustPill>
                 <TrustPill>Google login</TrustPill>
-                <TrustPill>Optimiza y reutiliza</TrustPill>
+                <TrustPill>Optimiza una vez, reutiliza</TrustPill>
                 <TrustPill>Menos fricción mental</TrustPill>
               </div>
             </div>
@@ -173,16 +178,19 @@ export default function LandingPage() {
                   Aquí es donde tus prompts dejan de fallar
                 </h3>
                 <p className="mt-2 text-sm text-white/70">
-                  Convierte una intención vaga en una instrucción operacional
-                  (repetible y con formato de salida).
+                  No “mejora el texto”. Te obliga a definir lo que normalmente
+                  queda ambiguo para que la IA entregue algo usable.
                 </p>
 
                 <div className="mt-5 grid gap-3">
+                  {/* ✅ “Antes” más real (vergonzoso) */}
                   <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
                     <p className="text-xs text-white/50 mb-2">Antes</p>
-                    Hazme un post para redes sobre mi servicio.
+                    Hazme un post para redes sobre mi servicio, que se vea
+                    profesional y que venda.
                   </div>
 
+                  {/* ✅ “Después” más operacional y con payoff */}
                   <div className="rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/75">
                     <p className="text-xs text-white/50 mb-2">
                       Después (listo para ejecutar)
@@ -190,29 +198,33 @@ export default function LandingPage() {
                     <div className="space-y-2">
                       <p>
                         <span className="text-white/60">Rol:</span> Copywriter
-                        senior
+                        senior B2C
                       </p>
                       <p>
                         <span className="text-white/60">Objetivo:</span> Crear 5
-                        variantes de post para {"{AUDIENCIA}"} sobre{" "}
+                        posts con hooks distintos para {"{AUDIENCIA}"} sobre{" "}
                         {"{SERVICIO}"}.
                       </p>
                       <p>
-                        <span className="text-white/60">Inputs:</span> contexto{" "}
-                        {"{CONTEXTO}"} / beneficio {"{BENEFICIO}"} / objeción{" "}
-                        {"{OBJECION}"}.
+                        <span className="text-white/60">Inputs:</span>{" "}
+                        {"{CONTEXTO}"} / {"{BENEFICIO}"} / {"{OBJECION}"} /
+                        {"{PRUEBA_SOCIAL}"}.
                       </p>
                       <p>
                         <span className="text-white/60">Restricciones:</span>{" "}
-                        sin jerga, máx. 120 palabras, tono {"{TONO}"}.
+                        sin jerga, 110–140 palabras, tono {"{TONO}"}, CTA
+                        explícito.
                       </p>
                       <p>
                         <span className="text-white/60">
-                          Formato (obligatorio):
+                          Formato obligatorio:
                         </span>{" "}
-                        lista numerada con Hook → Beneficio → Objeción → CTA.
+                        Hook → Beneficio → Objeción → Micro-prueba → CTA.
                       </p>
                     </div>
+                    <p className="mt-3 text-xs text-white/50">
+                      Resultado: menos “respuestas bonitas”, más salida utilizable.
+                    </p>
                   </div>
                 </div>
 
@@ -233,6 +245,25 @@ export default function LandingPage() {
                 className="pointer-events-none absolute -inset-6 rounded-[2rem] border border-white/5"
                 aria-hidden="true"
               />
+            </div>
+          </div>
+
+          {/* ✅ BLOQUE “problema” corto debajo del hero (sube conversión) */}
+          <div className="mt-10 rounded-3xl border border-white/10 bg-black/40 p-6">
+            <p className="text-xs text-white/50">Si esto te pasa, estás perdiendo tiempo</p>
+            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm text-white/75">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                Iteras 6 veces para llegar a algo “más o menos”.
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                La IA responde “correcto”, pero no entrega algo accionable.
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                Cambias palabras a ciegas esperando un resultado distinto.
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                Terminas “hablando” con la IA sin avanzar en trabajo real.
+              </div>
             </div>
           </div>
         </div>
@@ -266,8 +297,8 @@ export default function LandingPage() {
                 Hace tu prompt repetible
               </h3>
               <p className="mt-2 text-sm text-white/70">
-                Te fuerza a definir lo que normalmente queda ambiguo: objetivo,
-                inputs, restricciones y salida.
+                Define lo que normalmente queda ambiguo: objetivo, inputs,
+                restricciones y salida. Eso es lo que baja lo “genérico”.
               </p>
               <div className="mt-4 flex flex-wrap gap-2">
                 <Chip>Objetivo</Chip>
@@ -309,8 +340,8 @@ export default function LandingPage() {
                   </span>
                 </p>
                 <p className="mt-2 text-sm text-white/70 max-w-2xl">
-                  Tier cerrado con age-gate y uso controlado diario. No es el
-                  foco del producto.
+                  Tier cerrado con age-gate y límites diarios. No es el foco del
+                  producto.
                 </p>
               </div>
               <Link
@@ -356,7 +387,7 @@ export default function LandingPage() {
                   <span className="font-medium text-white/85">
                     10 optimizaciones/día
                   </span>{" "}
-                  (básicas).
+                  para salir del prompt genérico.
                 </p>
               </div>
 
@@ -366,9 +397,9 @@ export default function LandingPage() {
                   Resultados más limpios
                 </p>
                 <p className="mt-2 text-sm text-white/70">
-                  Optimización avanzada.{" "}
+                  Optimización avanzada con mejor consistencia.{" "}
                   <span className="font-medium text-white/85">
-                    Desde $99 MXN/mes
+                    $99 MXN/mes
                   </span>
                   .
                 </p>
@@ -382,7 +413,7 @@ export default function LandingPage() {
                 <p className="mt-2 text-sm text-white/70">
                   Ultimate + age-gate.{" "}
                   <span className="font-medium text-white/85">
-                    Desde $149 MXN/mes
+                    $149 MXN/mes
                   </span>
                   .
                 </p>
@@ -420,7 +451,7 @@ export default function LandingPage() {
           <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
             <FeatureCard
               title="Explora por caso de uso"
-              desc="Encuentra ejemplos por tipo de trabajo (marketing, dev, soporte, etc.)."
+              desc="Ejemplos reales por tipo de trabajo: marketing, dev, soporte, etc."
               cta="Abrir ejemplos"
             />
             <FeatureCard
@@ -430,7 +461,7 @@ export default function LandingPage() {
             />
             <FeatureCard
               title="Guárdalo y reutiliza"
-              desc="Si algo funciona, no lo vuelvas a construir desde cero."
+              desc="Si algo funciona, no lo reconstruyas: guárdalo y vuelve cuando lo necesites."
               cta="Guardar prompts"
             />
           </div>
@@ -447,8 +478,8 @@ export default function LandingPage() {
                   Tu Prompt Base
                 </h2>
                 <p className="mt-2 text-white/70 max-w-2xl">
-                  Tus mejores prompts viven aquí. Menos fricción mental cada vez
-                  que vuelves a pedir algo a la IA.
+                  Aquí viven tus prompts que ya funcionan. No empieces de cero
+                  cada vez que vuelves a usar IA.
                 </p>
               </div>
 
@@ -464,11 +495,11 @@ export default function LandingPage() {
               <MiniStat title="Hábito" desc="Un lugar fijo para tus prompts" />
               <MiniStat
                 title="Switching cost"
-                desc="Más difícil volver atrás"
+                desc="Cada prompt guardado te amarra más"
               />
               <MiniStat
                 title="Reutilización"
-                desc="Optimiza una vez, usa muchas"
+                desc="Optimiza una vez, úsalo muchas"
               />
             </div>
           </div>
@@ -485,8 +516,8 @@ export default function LandingPage() {
                   Workflows (Prompt Packs)
                 </h2>
                 <p className="mt-2 text-white/70 max-w-2xl">
-                  Sistemas completos para llegar a un resultado específico sin
-                  adivinar (no consumibles en 5 minutos).
+                  Workflows completos para llegar a un resultado específico sin
+                  improvisar. Dirección + estructura + salida clara.
                 </p>
               </div>
 
@@ -501,17 +532,17 @@ export default function LandingPage() {
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
               <PackCard
                 title="Workflows gratis"
-                desc="Para probar el enfoque de proceso completo."
+                desc="Para probar el enfoque y entender el sistema de inicio → salida."
                 tag="free"
               />
               <PackCard
                 title="Workflows premium"
-                desc="Para tu trabajo real: proceso completo, reusable, y con resultado claro."
+                desc="Para trabajo real: proceso completo, reutilizable y orientado a un resultado."
                 tag="premium"
               />
               <PackCard
                 title="Mis compras"
-                desc="Acceso y estado de tus workflows."
+                desc="Acceso y estado de tus workflows (sin perder lo que ya te funciona)."
                 tag="dashboard"
               />
             </div>
@@ -608,9 +639,9 @@ export default function LandingPage() {
         <div className="mx-auto max-w-6xl">
           <div className="rounded-2xl border border-white/10 bg-black/70 backdrop-blur px-4 py-2 sm:py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
             <div className="text-sm text-white/80">
-              Optimiza tu prompt y obtén un resultado claro.
+              Deja el ensayo-error y obtén un resultado claro.
               <span className="ml-2 text-white/60 text-xs hidden sm:inline">
-                Sin ensayo-error infinito.
+                Optimiza una vez, reutiliza después.
               </span>
             </div>
             <div className="flex gap-2">
