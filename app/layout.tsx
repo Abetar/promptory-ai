@@ -21,12 +21,13 @@ const ogImage = "/og.png";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
-  // ✅ Cambiamos el enfoque: resultado > catálogo
+  // ✅ Core message: resultado > catálogo
   title: {
     default: "Promptory AI — Resultados claros desde el primer intento",
     template: "%s | Promptory AI",
   },
 
+  // ✅ Menos “repositorio/packs”, más outcome
   description:
     "Deja de iterar con la IA. Promptory convierte prompts vagos en instrucciones ejecutables (objetivo, inputs, restricciones y formato) para obtener salida utilizable más rápido.",
 
