@@ -13,8 +13,6 @@ type ApiOk = {
   model: string | null;
   latencyMs: number;
   output: string;
-
-  // opcional (si viene del backend)
   subscriptionTier?: "none" | "basic" | "unlimited";
 };
 
@@ -28,8 +26,8 @@ type UsageOk = {
   ok: true;
   plan: "free" | "pro";
   usedToday: number;
-  dailyLimit: number | null; // null para pro
-  resetsAt: string; // ISO
+  dailyLimit: number | null;
+  resetsAt: string;
 };
 
 type UsageErr = {
@@ -37,8 +35,29 @@ type UsageErr = {
   message: string;
 };
 
-export default function PromptOptimizerClient() {
-  const [raw, setRaw] = useState("");
+type PromptBaseGetOk = {
+  ok: true;
+  data: { content: string; createdAt: string | null; updatedAt: string | null };
+};
+
+type PromptBasePutOk = {
+  ok: true;
+  data: { content: string; createdAt: string; updatedAt: string };
+};
+
+type PromptBaseErr = {
+  ok: false;
+  message: string;
+};
+
+type Props = {
+  initialInput?: string;
+  isPro?: boolean;
+  tier?: "none" | "basic" | "unlimited";
+};
+
+export default function PromptOptimizerClient({ initialInput = "" }: Props) {
+  const [raw, setRaw] = useState(initialInput);
   const [targetAI, setTargetAI] = useState<TargetAI>("chatgpt");
 
   const [optimized, setOptimized] = useState("");
@@ -60,6 +79,97 @@ export default function PromptOptimizerClient() {
   const [usageErr, setUsageErr] = useState<string | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
 
+  // =========================
+  // ✅ Prompt Base (sticky)
+  // =========================
+  const [pbLoading, setPbLoading] = useState(false);
+  const [pbSaving, setPbSaving] = useState(false);
+  const [pbErr, setPbErr] = useState<string | null>(null);
+  const [pbUpdatedAt, setPbUpdatedAt] = useState<Date | null>(null);
+
+  // Para detectar cambios sin guardar
+  const [lastSavedContent, setLastSavedContent] = useState<string>(initialInput);
+
+  // ✅ si cambia initialInput (server) lo cargamos una vez,
+  // sin romper UX si el usuario ya empezó a escribir
+  useEffect(() => {
+    setRaw((prev) => (prev.trim().length ? prev : initialInput));
+    setLastSavedContent((prev) => (prev ? prev : initialInput));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialInput]);
+
+  const hasUnsavedChanges = useMemo(() => {
+    return raw.trim() !== (lastSavedContent ?? "").trim();
+  }, [raw, lastSavedContent]);
+
+  async function loadPromptBase() {
+    setPbErr(null);
+    setPbLoading(true);
+
+    try {
+      const res = await fetch("/api/user/prompt-base", { method: "GET" });
+      const data = (await res.json()) as PromptBaseGetOk | PromptBaseErr;
+
+      if (!res.ok || !("ok" in data) || (data as any).ok === false) {
+        setPbErr((data as PromptBaseErr)?.message ?? "No se pudo cargar tu Prompt Base.");
+        return;
+      }
+
+      const ok = data as PromptBaseGetOk;
+      const content = ok.data?.content ?? "";
+      setRaw(content);
+      setLastSavedContent(content);
+
+      const updatedAtIso = ok.data?.updatedAt ?? null;
+      setPbUpdatedAt(updatedAtIso ? new Date(updatedAtIso) : null);
+    } catch {
+      setPbErr("No se pudo cargar tu Prompt Base (sin conexión).");
+    } finally {
+      setPbLoading(false);
+    }
+  }
+
+  async function savePromptBase() {
+    setPbErr(null);
+
+    const content = raw.trim();
+    if (!content) {
+      setPbErr("Tu Prompt Base no puede estar vacío.");
+      return;
+    }
+    if (content.length > 20000) {
+      setPbErr("Tu Prompt Base excede el límite (20,000 caracteres).");
+      return;
+    }
+
+    setPbSaving(true);
+    try {
+      const res = await fetch("/api/user/prompt-base", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+
+      const data = (await res.json()) as PromptBasePutOk | PromptBaseErr;
+
+      if (!res.ok || !("ok" in data) || (data as any).ok === false) {
+        setPbErr((data as PromptBaseErr)?.message ?? "No se pudo guardar tu Prompt Base.");
+        return;
+      }
+
+      const ok = data as PromptBasePutOk;
+      setLastSavedContent(ok.data.content);
+      setPbUpdatedAt(new Date(ok.data.updatedAt));
+    } catch {
+      setPbErr("No se pudo guardar tu Prompt Base (sin conexión).");
+    } finally {
+      setPbSaving(false);
+    }
+  }
+
+  // =========================
+  // Optimizer actual
+  // =========================
   const canRunInput = useMemo(() => raw.trim().length >= 10, [raw]);
 
   const limitReached = useMemo(() => {
@@ -81,9 +191,7 @@ export default function PromptOptimizerClient() {
     setUsageLoading(true);
 
     try {
-      const res = await fetch("/api/tools/prompt-optimizer/usage", {
-        method: "GET",
-      });
+      const res = await fetch("/api/tools/prompt-optimizer/usage", { method: "GET" });
       const data = (await res.json()) as UsageOk | UsageErr;
 
       if (!res.ok || !("ok" in data) || data.ok === false) {
@@ -109,7 +217,6 @@ export default function PromptOptimizerClient() {
     setCopied(false);
   }, [optimized]);
 
-  // si cambia targetAI, limpiamos errores/copiado (no tocamos output para no molestar)
   useEffect(() => {
     setState(null);
     setCopied(false);
@@ -132,7 +239,6 @@ export default function PromptOptimizerClient() {
         const res = await fetch("/api/tools/prompt-optimizer/run", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          // ✅ ya NO mandamos "mode"
           body: JSON.stringify({ input: raw, targetAI }),
         });
 
@@ -207,7 +313,6 @@ export default function PromptOptimizerClient() {
     return `Se reinicia: ${resetAtDate.toLocaleString()}`;
   }, [resetAtDate]);
 
-  // Banner amarillo: solo si FREE y está cerca o alcanzó
   const showLimitBanner = useMemo(() => {
     if (!usage) return false;
     if (usage.plan !== "free") return false;
@@ -223,8 +328,63 @@ export default function PromptOptimizerClient() {
     return Math.max(0, usage.dailyLimit - usage.usedToday);
   }, [usage]);
 
+  const pbUpdatedLabel = useMemo(() => {
+    if (!pbUpdatedAt) return null;
+    return `Última edición: ${pbUpdatedAt.toLocaleString()}`;
+  }, [pbUpdatedAt]);
+
   return (
     <div className="rounded-2xl border border-neutral-800 bg-neutral-900/30 p-5 space-y-4">
+      {/* ✅ Prompt Base banner / acciones */}
+      <div className="rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4 space-y-3">
+        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <div className="text-sm font-semibold text-neutral-100">Tu Prompt Base</div>
+            <div className="mt-1 text-xs text-neutral-500">
+              Guárdalo para que siempre aparezca aquí y lo puedas optimizar cuando quieras.
+              {pbUpdatedLabel ? <> · {pbUpdatedLabel}</> : null}
+            </div>
+
+            {hasUnsavedChanges ? (
+              <div className="mt-2 text-xs text-amber-200">
+                Tienes cambios sin guardar.
+              </div>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={loadPromptBase}
+              disabled={pbLoading || pbSaving || pending}
+              className="inline-flex items-center justify-center rounded-xl border border-neutral-800 bg-neutral-950 px-4 py-2 text-sm font-semibold text-neutral-200 hover:bg-neutral-900 transition disabled:opacity-60"
+            >
+              {pbLoading ? "Cargando..." : "Cargar Prompt Base"}
+            </button>
+
+            <button
+              type="button"
+              onClick={savePromptBase}
+              disabled={pbSaving || pbLoading || pending}
+              className={[
+                "inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold transition",
+                pbSaving
+                  ? "bg-neutral-800 text-neutral-400 cursor-not-allowed"
+                  : "bg-neutral-100 text-neutral-950 hover:opacity-90",
+              ].join(" ")}
+            >
+              {pbSaving ? "Guardando..." : "Guardar"}
+            </button>
+          </div>
+        </div>
+
+        {pbErr ? (
+          <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            {pbErr}
+          </div>
+        ) : null}
+      </div>
+
       {/* Banner amarillo UX: límite free */}
       {showLimitBanner ? (
         <div className="rounded-2xl border border-amber-500/30 bg-amber-500/10 p-4">
@@ -235,9 +395,7 @@ export default function PromptOptimizerClient() {
 
             <div className="flex-1">
               <div className="text-sm font-semibold text-amber-200">
-                {limitReached
-                  ? "Límite diario alcanzado"
-                  : "Te estás quedando sin runs"}
+                {limitReached ? "Límite diario alcanzado" : "Te estás quedando sin runs"}
               </div>
 
               <div className="mt-1 text-sm text-amber-200/80">
@@ -249,9 +407,7 @@ export default function PromptOptimizerClient() {
                 ) : (
                   <>
                     Te quedan{" "}
-                    <span className="font-semibold text-amber-200">
-                      {remainingRuns}
-                    </span>{" "}
+                    <span className="font-semibold text-amber-200">{remainingRuns}</span>{" "}
                     run(s) hoy en Free.
                     {resetsLabel ? <> {resetsLabel}.</> : null}
                   </>
@@ -299,9 +455,7 @@ export default function PromptOptimizerClient() {
               {usageLabel}
             </span>
 
-            {resetsLabel ? (
-              <span className="text-xs text-neutral-500">{resetsLabel}</span>
-            ) : null}
+            {resetsLabel ? <span className="text-xs text-neutral-500">{resetsLabel}</span> : null}
           </div>
 
           <div className="text-xs text-neutral-500">
@@ -310,7 +464,6 @@ export default function PromptOptimizerClient() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {/* ✅ CTA a Unlimited (+18) */}
           <Link
             href="/dashboard/tools/optimizer-unlimited"
             className="inline-flex items-center justify-center rounded-xl border border-fuchsia-500/30 bg-fuchsia-500/10 px-3 py-2 text-sm font-semibold text-fuchsia-200 hover:bg-fuchsia-500/15 transition"
@@ -354,11 +507,7 @@ export default function PromptOptimizerClient() {
               : "bg-neutral-100 text-neutral-950 hover:opacity-90",
           ].join(" ")}
         >
-          {pending
-            ? "Optimizando..."
-            : limitReached
-            ? "Límite alcanzado"
-            : "Optimizar"}
+          {pending ? "Optimizando..." : limitReached ? "Límite alcanzado" : "Optimizar"}
         </button>
 
         <button
@@ -414,9 +563,7 @@ export default function PromptOptimizerClient() {
             <div className="mt-1 text-xs text-neutral-500">
               {meta.subscriptionTier ? (
                 <>
-                  tier:{" "}
-                  <span className="text-neutral-300">{meta.subscriptionTier}</span>{" "}
-                  ·{" "}
+                  tier: <span className="text-neutral-300">{meta.subscriptionTier}</span> ·{" "}
                 </>
               ) : null}
               plan: <span className="text-neutral-300">{meta.plan}</span> · engine:{" "}
@@ -430,15 +577,11 @@ export default function PromptOptimizerClient() {
               {typeof meta.latencyMs === "number" ? <> · {meta.latencyMs}ms</> : null}
             </div>
           ) : (
-            <div className="mt-1 text-xs text-neutral-600">
-              Aquí aparecerá el prompt optimizado.
-            </div>
+            <div className="mt-1 text-xs text-neutral-600">Aquí aparecerá el prompt optimizado.</div>
           )}
         </div>
 
-        <pre className="text-sm text-neutral-200 whitespace-pre-wrap">
-          {optimized || "—"}
-        </pre>
+        <pre className="text-sm text-neutral-200 whitespace-pre-wrap">{optimized || "—"}</pre>
       </div>
     </div>
   );

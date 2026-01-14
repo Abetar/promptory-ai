@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { hasActiveSubscription, hasUnlimitedSubscription, getSubscriptionTier } from "@/lib/subscription";
+import { hasUnlimitedSubscription, getSubscriptionTier } from "@/lib/subscription";
 import { logEvent } from "@/lib/audit";
 
 export const runtime = "nodejs";
@@ -11,23 +11,20 @@ export const runtime = "nodejs";
 /**
  * Free limits
  */
-const FREE_DAILY_LIMIT = Number(
-  process.env.PROMPT_OPTIMIZER_FREE_DAILY_LIMIT ?? "10"
-);
+const FREE_DAILY_LIMIT = Number(process.env.PROMPT_OPTIMIZER_FREE_DAILY_LIMIT ?? "10");
 
 /**
- * OpenAI config (Tier 1 / Pro)
+ * OpenAI config (Tier Pro -> OpenAI)
  */
 const OPENAI_MODEL = process.env.OPENAI_MODEL ?? "gpt-4o-mini";
 
 type TargetAI = "chatgpt" | "claude" | "gemini" | "deepseek";
-
 type OptimizerMode = "standard" | "unlimited";
 
 type Body = {
   input: string;
   targetAI?: TargetAI;
-  mode?: OptimizerMode; // ✅ nuevo
+  mode?: OptimizerMode;
 };
 
 function badRequest(message: string) {
@@ -35,42 +32,32 @@ function badRequest(message: string) {
 }
 
 function forbidden(message: string, code: string, extra?: Record<string, any>) {
-  return NextResponse.json(
-    { ok: false, message, code, ...(extra ?? {}) },
-    { status: 403 }
-  );
+  return NextResponse.json({ ok: false, message, code, ...(extra ?? {}) }, { status: 403 });
 }
 
 function startOfTodayUTC() {
   const now = new Date();
-  return new Date(
-    Date.UTC(
-      now.getUTCFullYear(),
-      now.getUTCMonth(),
-      now.getUTCDate(),
-      0,
-      0,
-      0,
-      0
-    )
-  );
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0, 0));
 }
 
 /**
- * =========================
- * ✅ Mock optimizer (Free) — V2 (decide + supuestos)
- * =========================
+ * -----------------------------
+ * Helpers
+ * -----------------------------
  */
 
 function normalizeText(s: string) {
-  return String(s ?? "")
-    .replace(/\s+/g, " ")
-    .trim();
+  return String(s ?? "").replace(/\s+/g, " ").trim();
+}
+
+function buildInputPreview(input: string, max = 240) {
+  const clean = normalizeText(input);
+  if (clean.length <= max) return clean;
+  return clean.slice(0, max).trimEnd() + "…";
 }
 
 function looksSpanish(input: string) {
   const t = normalizeText(input).toLowerCase();
-
   const spanishHits = [
     " que ",
     " para ",
@@ -98,446 +85,350 @@ function looksSpanish(input: string) {
   return score >= 2;
 }
 
-type Detected = {
-  language: "es" | "en";
-  category:
-    | "content"
-    | "marketing"
-    | "coding"
-    | "design"
-    | "analysis"
-    | "productivity"
-    | "general";
-  platform:
-    | "YouTube"
-    | "TikTok"
-    | "Instagram"
-    | "X"
-    | "LinkedIn"
-    | "Blog"
-    | "Web"
-    | "App"
-    | "General";
-  outputType:
-    | "Guion"
-    | "Post"
-    | "Carrusel"
-    | "Anuncio"
-    | "Email"
-    | "Ticket"
-    | "Código"
-    | "Checklist"
-    | "Plan"
-    | "Resumen"
-    | "Respuesta";
-  tone: "Profesional" | "Casual" | "Persuasivo" | "Técnico" | "Amigable";
-  audience: "General" | "Principiantes" | "Intermedio" | "Avanzado";
-  deliverables: string[];
-  assumptions: string[];
-};
+type DetectedType = "post" | "guion" | "ticket" | "codigo" | "plan" | "checklist" | "email" | "general";
 
-function detectIntent(input: string): Detected {
-  const raw = normalizeText(input);
-  const t = raw.toLowerCase();
+function detectType(input: string): DetectedType {
+  const t = normalizeText(input).toLowerCase();
 
-  const language: "es" | "en" = looksSpanish(raw) ? "es" : "en";
-
-  let platform: Detected["platform"] = "General";
-  if (t.includes("tiktok") || t.includes("tik tok")) platform = "TikTok";
-  else if (t.includes("youtube") || t.includes("yt")) platform = "YouTube";
-  else if (t.includes("instagram") || t.includes("ig")) platform = "Instagram";
-  else if (t.includes("linkedin")) platform = "LinkedIn";
-  else if (t.includes("twitter") || t.includes("x.com") || t.includes(" en x "))
-    platform = "X";
-  else if (t.includes("blog") || t.includes("artículo") || t.includes("articulo"))
-    platform = "Blog";
-  else if (t.includes("web") || t.includes("landing") || t.includes("site"))
-    platform = "Web";
-  else if (t.includes("app") || t.includes("android") || t.includes("ios"))
-    platform = "App";
-
-  let outputType: Detected["outputType"] = "Respuesta";
-  if (t.includes("guion") || t.includes("script")) outputType = "Guion";
-  else if (t.includes("post") || t.includes("publicación") || t.includes("publicacion"))
-    outputType = "Post";
-  else if (t.includes("carrusel") || t.includes("carousel")) outputType = "Carrusel";
-  else if (t.includes("anuncio") || t.includes("ads") || t.includes("copy"))
-    outputType = "Anuncio";
-  else if (t.includes("email") || t.includes("correo")) outputType = "Email";
-  else if (t.includes("ticket") || t.includes("zendesk") || t.includes("servicenow"))
-    outputType = "Ticket";
-  else if (
+  if (t.includes("ticket") || t.includes("bug") || t.includes("zendesk") || t.includes("servicenow")) {
+    return "ticket";
+  }
+  if (t.includes("guion") || t.includes("script") || t.includes("youtube") || t.includes("tiktok") || t.includes("shorts")) {
+    return "guion";
+  }
+  if (t.includes("post") || t.includes("linkedin") || t.includes("instagram") || t.includes("facebook") || t.includes("x") || t.includes("twitter")) {
+    return "post";
+  }
+  if (
     t.includes("código") ||
     t.includes("codigo") ||
+    t.includes("endpoint") ||
+    t.includes("api") ||
+    t.includes("prisma") ||
+    t.includes("next.js") ||
+    t.includes("nextjs") ||
     t.includes("typescript") ||
     t.includes("javascript") ||
     t.includes("python") ||
     t.includes("kotlin") ||
-    t.includes("sql") ||
-    t.includes("next.js") ||
-    t.includes("nextjs")
-  )
-    outputType = "Código";
-  else if (t.includes("checklist") || t.includes("lista de verificación"))
-    outputType = "Checklist";
-  else if (t.includes("plan") || t.includes("roadmap") || t.includes("ruta"))
-    outputType = "Plan";
-  else if (t.includes("resumen") || t.includes("summary")) outputType = "Resumen";
-
-  let category: Detected["category"] = "general";
-  if (outputType === "Código") category = "coding";
-  else if (
-    t.includes("vender") ||
-    t.includes("conversion") ||
-    t.includes("marketing") ||
-    t.includes("copy") ||
-    t.includes("ventas")
-  )
-    category = "marketing";
-  else if (
-    outputType === "Guion" ||
-    outputType === "Post" ||
-    outputType === "Carrusel" ||
-    platform === "TikTok" ||
-    platform === "YouTube" ||
-    platform === "Instagram"
-  )
-    category = "content";
-  else if (t.includes("diseño") || t.includes("ux") || t.includes("ui"))
-    category = "design";
-  else if (t.includes("analiza") || t.includes("comparar") || t.includes("data"))
-    category = "analysis";
-  else if (t.includes("organiza") || t.includes("prioriza") || t.includes("tareas"))
-    category = "productivity";
-
-  let tone: Detected["tone"] = "Profesional";
-  if (t.includes("casual") || t.includes("informal")) tone = "Casual";
-  else if (t.includes("persuas") || t.includes("vende") || t.includes("convencer"))
-    tone = "Persuasivo";
-  else if (category === "coding") tone = "Técnico";
-  else if (t.includes("amigable") || t.includes("simple")) tone = "Amigable";
-
-  let audience: Detected["audience"] = "General";
-  if (t.includes("principiante") || t.includes("novato")) audience = "Principiantes";
-  else if (t.includes("avanzado") || t.includes("senior")) audience = "Avanzado";
-  else if (t.includes("intermedio")) audience = "Intermedio";
-  else if (t.includes("no sé") || t.includes("no se") || t.includes("no idea"))
-    audience = "Principiantes";
-
-  const deliverables: string[] = [];
-  if (outputType === "Guion") {
-    deliverables.push(
-      "Hook de 1–2 líneas",
-      "Estructura por secciones (inicio → desarrollo → cierre)",
-      "Call-to-action final",
-      "Versión corta y versión extendida",
-      "Lista de tomas/visuals sugeridos (si aplica)"
-    );
-  } else if (outputType === "Carrusel") {
-    deliverables.push(
-      "Titular principal (slide 1)",
-      "Estructura de 6–8 slides con texto por slide",
-      "Cierre con CTA",
-      "Variantes de copy (2 opciones)"
-    );
-  } else if (outputType === "Post") {
-    deliverables.push(
-      "Texto final listo para publicar",
-      "Variación alternativa (opción B)",
-      "Hashtags sugeridos (si aplica)",
-      "CTA no agresivo"
-    );
-  } else if (outputType === "Email") {
-    deliverables.push(
-      "Asunto",
-      "Cuerpo del correo",
-      "Versión corta (máximo 6–8 líneas)"
-    );
-  } else if (outputType === "Ticket") {
-    deliverables.push(
-      "Título del ticket",
-      "Descripción clara con pasos para reproducir (si aplica)",
-      "Resultado esperado vs actual",
-      "Prioridad sugerida"
-    );
-  } else if (outputType === "Código") {
-    deliverables.push(
-      "Cambios por archivo (ruta exacta)",
-      "Código completo del archivo afectado (cuando aplique)",
-      "Notas de integración (comandos y pasos)"
-    );
-  } else if (outputType === "Checklist") {
-    deliverables.push("Checklist accionable", "Criterios de éxito", "Siguiente paso sugerido");
-  } else if (outputType === "Plan") {
-    deliverables.push(
-      "Plan por fases (Fase 1/2/3)",
-      "Prioridades (P0/P1/P2)",
-      "Riesgos y mitigaciones"
-    );
-  } else if (outputType === "Resumen") {
-    deliverables.push(
-      "Resumen en 5–8 bullets",
-      "Acciones siguientes",
-      "Riesgos/pendientes (si aplica)"
-    );
-  } else {
-    deliverables.push(
-      "Respuesta directa",
-      "Pasos accionables",
-      "Ejemplo mínimo (si aplica)"
-    );
+    t.includes("sql")
+  ) {
+    return "codigo";
+  }
+  if (t.includes("roadmap") || t.includes("plan") || t.includes("estrategia") || t.includes("prioriza") || t.includes("sprint")) {
+    return "plan";
+  }
+  if (t.includes("checklist") || t.includes("lista de verificación") || t.includes("paso a paso") || t.includes("steps")) {
+    return "checklist";
+  }
+  if (t.includes("email") || t.includes("correo") || t.includes("asunto") || t.includes("redacta")) {
+    return "email";
   }
 
-  const assumptions: string[] = [];
-  if (platform === "General") {
-    assumptions.push(
-      language === "es"
-        ? "No se especificó plataforma, asumiré un formato genérico adaptable."
-        : "No platform was specified; I'll assume a general, adaptable format."
-    );
-  }
-  if (audience === "General") {
-    assumptions.push(
-      language === "es"
-        ? "No se especificó nivel; asumiré un nivel principiante–intermedio."
-        : "No experience level specified; I'll assume beginner-to-intermediate."
-    );
-  }
-  if (!/guion|script|post|carrusel|email|correo|ticket|código|codigo|plan|resumen/i.test(raw)) {
-    assumptions.push(
-      language === "es"
-        ? `No se especificó formato de salida; asumiré: ${outputType}.`
-        : `No output format specified; I'll assume: ${outputType}.`
-    );
-  }
-
-  return {
-    language,
-    category,
-    platform,
-    outputType,
-    tone,
-    audience,
-    deliverables,
-    assumptions,
-  };
+  return "general";
 }
 
-function buildMockOutput(input: string, targetAI: string) {
-  const raw = normalizeText(input);
-  const d = detectIntent(raw);
+function detectPlatform(input: string) {
+  const t = normalizeText(input).toLowerCase();
+  if (t.includes("linkedin")) return "LinkedIn";
+  if (t.includes("tiktok") || t.includes("tik tok")) return "TikTok";
+  if (t.includes("youtube") || t.includes("shorts")) return "YouTube";
+  if (t.includes("instagram") || t.includes("ig")) return "Instagram";
+  if (t.includes("facebook")) return "Facebook";
+  if (t.includes("twitter") || t.includes("x.com") || t.includes(" en x ")) return "X";
+  return "General";
+}
 
-  const lang = d.language;
+/**
+ * -----------------------------
+ * ✅ Bulletproof Prompt Maestro (PRO / OpenAI)
+ * -----------------------------
+ * 1) Siempre produce PROMPT FINAL primero
+ * 2) Solo usa SUPUESTOS si hace falta
+ * 3) No hace preguntas antes
+ */
+function buildBulletproofPromptMaster(input: string, targetAI: TargetAI): string {
+  const userInput = String(input ?? "").trim();
+  const isEs = looksSpanish(userInput);
 
-  const role =
-    lang === "es"
-      ? `Eres un experto senior en ingeniería de prompts y ${d.category === "coding" ? "arquitectura de software" : d.category === "marketing" ? "marketing/copywriting" : d.category === "content" ? "creación de contenido" : d.category === "analysis" ? "análisis" : d.category === "design" ? "UX/UI" : "resolución de tareas"}. Tu especialidad es generar resultados concretos en ${targetAI.toUpperCase()}.`
-      : `You are a senior prompt engineer and ${d.category === "coding" ? "software architect" : d.category === "marketing" ? "marketing/copywriting expert" : d.category === "content" ? "content creator" : d.category === "analysis" ? "analyst" : d.category === "design" ? "UX/UI specialist" : "problem solver"}. You produce concrete outputs in ${targetAI.toUpperCase()}.`;
+  if (isEs) {
+    return `
+Eres un experto senior en ingeniería de prompts.
 
-  const context =
-    lang === "es"
-      ? `El usuario te dio una petición breve/ambigua. Tu trabajo es convertirla en un prompt listo para copiar/pegar, tomando decisiones razonables cuando falten datos, y declarando SUPUESTOS explícitos. El resultado debe funcionar bien en ${targetAI.toUpperCase()} y estar orientado a ${d.outputType} para ${d.platform}.`
-      : `The user gave a brief/ambiguous request. Your job is to convert it into a copy/paste-ready prompt by making reasonable decisions when info is missing, and declaring explicit ASSUMPTIONS. The result must work well in ${targetAI.toUpperCase()} and be oriented to a ${d.outputType} for ${d.platform}.`;
+TAREA:
+Convierte el INPUT del usuario en un único PROMPT FINAL listo para copiar/pegar y ejecutar en ${targetAI.toUpperCase()}.
 
-  const objective =
-    lang === "es"
-      ? `Generar una respuesta final que cumpla la intención del usuario y entregue: ${d.deliverables.join(", ")}.`
-      : `Generate a final response that matches the user's intent and delivers: ${d.deliverables.join(", ")}.`;
+REGLAS OBLIGATORIAS:
+- Debes entregar primero el PROMPT FINAL.
+- NO hagas preguntas antes del PROMPT FINAL.
+- NO uses placeholders vacíos tipo [PEGA AQUÍ], [X], etc.
+- NO inventes datos específicos (nombres, precios, métricas).
+- Si falta información, agrega SUPUESTOS explícitos (solo los necesarios).
+- El PROMPT FINAL debe forzar estructura de salida y entregables concretos.
 
-  const suppositions =
-    d.assumptions.length === 0
-      ? lang === "es"
-        ? "No se requieren supuestos adicionales."
-        : "No additional assumptions are required."
-      : d.assumptions.map((a) => `- ${a}`).join("\n");
+FORMATO OBLIGATORIO DE TU RESPUESTA (SOLO ESTO):
+PROMPT FINAL:
+...
 
-  const inputsBlock =
-    lang === "es"
-      ? `- Prompt original del usuario: "${raw}"
-- Plataforma (inferida): ${d.platform}
-- Tipo de salida (inferido): ${d.outputType}
-- Tono (inferido): ${d.tone}
-- Audiencia (inferida): ${d.audience}`
-      : `- User's original prompt: "${raw}"
-- Platform (inferred): ${d.platform}
-- Output type (inferred): ${d.outputType}
-- Tone (inferred): ${d.tone}
-- Audience (inferred): ${d.audience}`;
+SUPUESTOS (solo si aplican):
+- ...
 
-  const steps =
-    lang === "es"
-      ? [
-          "1) Interpreta la intención real del usuario (qué quiere lograr).",
-          "2) Decide el formato exacto de salida y estructura, sin pedirle al usuario que rellene huecos.",
-          "3) Produce una versión final lista para usar, con entregables concretos.",
-          "4) Mantén claridad, concisión y orientación a acción.",
-          "5) Si falta info, usa SUPUESTOS explícitos (sin inventar datos específicos).",
-          "6) Cierra con PREGUNTAS MÍNIMAS (máximo 7) solo para refinar.",
-        ].join("\n")
-      : [
-          "1) Interpret the user's true intent (what they want to achieve).",
-          "2) Decide the exact output format and structure without asking the user to fill blanks.",
-          "3) Produce a final, ready-to-use version with concrete deliverables.",
-          "4) Keep it clear, concise, and action-oriented.",
-          "5) If info is missing, use explicit ASSUMPTIONS (do not invent specific facts).",
-          "6) End with MINIMAL QUESTIONS (max 7) only to refine.",
-        ].join("\n");
-
-  const outputFormat =
-    lang === "es"
-      ? `Entrega el resultado como ${d.outputType} listo para usar, respetando el tono "${d.tone}". Incluye secciones y bullets cuando haga sentido.`
-      : `Deliver the result as a ready-to-use ${d.outputType} respecting the "${d.tone}" tone. Use sections and bullets when appropriate.`;
-
-  const rules =
-    lang === "es"
-      ? [
-          "- Devuelve SOLO el resultado final (sin explicación externa).",
-          "- No uses placeholders ni campos vacíos.",
-          "- No inventes información específica (nombres, precios, métricas) si no fue dada.",
-          "- Si necesitas inventar para completar, conviértelo en SUPUESTO explícito.",
-          `- Optimiza para ${targetAI.toUpperCase()} (estilo de instrucción claro y accionable).`,
-          "- Mantén el idioma original del usuario.",
-        ].join("\n")
-      : [
-          "- Return ONLY the final result (no extra explanation).",
-          "- Do not use placeholders or empty fields.",
-          "- Do not invent specific facts (names, prices, metrics) not provided by the user.",
-          "- If you must assume to complete, make it an explicit ASSUMPTION.",
-          `- Optimize for ${targetAI.toUpperCase()} (clear, actionable instruction style).`,
-          "- Keep the user's original language.",
-        ].join("\n");
-
-  const checklist =
-    lang === "es"
-      ? [
-          "- ¿Está listo para copiar/pegar sin editar nada?",
-          "- ¿Convierte intención vaga en entregables concretos?",
-          "- ¿Los supuestos están explícitos y no “inventados” como hechos?",
-          "- ¿El formato es claro y estructurado?",
-          `- ¿Está optimizado para ${targetAI.toUpperCase()}?`,
-        ].join("\n")
-      : [
-          "- Is it copy/paste ready with no edits required?",
-          "- Does it turn a vague intent into concrete deliverables?",
-          "- Are assumptions explicit (not presented as facts)?",
-          "- Is the structure clear?",
-          `- Is it optimized for ${targetAI.toUpperCase()}?`,
-        ].join("\n");
-
-  const questions =
-    lang === "es"
-      ? [
-          "1) ¿Cuál es la plataforma exacta (si no es la asumida)?",
-          "2) ¿Quién es tu público objetivo principal?",
-          "3) ¿Qué tono prefieres (neutral, casual, persuasivo, técnico)?",
-          "4) ¿Tienes un ejemplo de referencia (link o descripción)?",
-          "5) ¿Qué restricción NO se puede romper (tiempo, formato, longitud, políticas)?",
-        ].join("\n")
-      : [
-          "1) What is the exact platform (if not the assumed one)?",
-          "2) Who is the primary target audience?",
-          "3) What tone do you prefer (neutral, casual, persuasive, technical)?",
-          "4) Do you have a reference example (link or description)?",
-          "5) What is the non-negotiable constraint (time, format, length, policies)?",
-        ].join("\n");
+INPUT DEL USUARIO:
+${userInput}
+`.trim();
+  }
 
   return `
-ROL:
-${role}
+You are a senior prompt engineer.
 
-CONTEXTO:
-${context}
+TASK:
+Turn the user's INPUT into a single copy/paste-ready FINAL PROMPT for ${targetAI.toUpperCase()}.
 
-OBJETIVO:
-${objective}
+MANDATORY RULES:
+- Output the FINAL PROMPT first.
+- Do NOT ask questions before the FINAL PROMPT.
+- Do NOT use empty placeholders like [PASTE HERE], [X], etc.
+- Do NOT invent specific facts (names, prices, metrics).
+- If info is missing, add explicit ASSUMPTIONS (only what’s needed).
+- The FINAL PROMPT must enforce output structure and concrete deliverables.
 
-SUPUESTOS (solo si faltan datos):
-${suppositions}
+MANDATORY OUTPUT FORMAT (ONLY THIS):
+FINAL PROMPT:
+...
 
-INPUTS (solo los dados por el usuario + inferencias marcadas):
-${inputsBlock}
+ASSUMPTIONS (only if needed):
+- ...
 
-PASOS:
-${steps}
-
-FORMATO DE SALIDA:
-${outputFormat}
-
-REGLAS Y RESTRICCIONES:
-${rules}
-
-CHECKLIST DE CALIDAD:
-${checklist}
-
-PREGUNTAS MÍNIMAS (máximo 7):
-${questions}
+USER INPUT:
+${userInput}
 `.trim();
 }
 
-async function runOpenAI(input: string, targetAI: string) {
+/**
+ * -----------------------------
+ * ✅ Mock optimizer (FREE)
+ * -----------------------------
+ * Aquí SÍ generamos un PROMPT FINAL (no devolvemos el maestro).
+ * Heurístico ligero: detecta tipo + plataforma + estructura.
+ */
+function buildMockFinalPrompt(input: string, targetAI: TargetAI) {
+  const raw = normalizeText(input);
+  const isEs = looksSpanish(raw);
+  const type = detectType(raw);
+  const platform = detectPlatform(raw);
+
+  if (!isEs) {
+    // English fallback simple
+    return `FINAL PROMPT:
+You are an expert assistant. Create the best possible output for the user's request below, optimized for ${targetAI.toUpperCase()}.
+- Decide the most useful format and structure automatically.
+- Do not invent specific facts.
+- If critical info is missing, make reasonable assumptions and list them explicitly.
+- Output must be well-structured, clear, and directly usable.
+
+USER REQUEST:
+${raw}
+
+ASSUMPTIONS (only if needed):
+- Platform is ${platform}.
+- Audience is beginner-to-intermediate.
+`.trim();
+  }
+
+  const assumptions: string[] = [];
+  if (platform === "General") assumptions.push("No se especificó plataforma; asumo un formato genérico reutilizable.");
+  assumptions.push("Asumo audiencia principiante–intermedia.");
+  assumptions.push("Asumo tono profesional, claro y directo.");
+
+  const baseHeader = `PROMPT FINAL:
+Actúa como un experto senior y genera el mejor resultado posible optimizado para ${targetAI.toUpperCase()}.
+
+CONTEXTO:
+- Plataforma: ${platform}
+- Idioma: Español
+
+REGLAS:
+- No inventes datos específicos.
+- Si falta información crítica, usa SUPUESTOS explícitos.
+- Entrega un resultado final estructurado, claro y listo para usar.
+
+SOLICITUD DEL USUARIO:
+${raw}
+`;
+
+  if (type === "ticket") {
+    return `
+${baseHeader}
+
+FORMATO DE SALIDA (OBLIGATORIO):
+1) Título
+2) Descripción / Contexto
+3) Pasos para reproducir (numerados)
+4) Resultado actual
+5) Resultado esperado
+6) Impacto / Severidad sugerida
+7) Notas técnicas (si aplica)
+
+SUPUESTOS (solo si aplican):
+- ${assumptions.join("\n- ")}
+`.trim();
+  }
+
+  if (type === "codigo") {
+    return `
+${baseHeader}
+
+FORMATO DE SALIDA (OBLIGATORIO):
+- Cambios por archivo (ruta exacta)
+- Código completo de cada archivo afectado (no snippets sueltos)
+- Consideraciones (edge cases / validaciones)
+- Pasos para ejecutar / probar (comandos)
+- Si hay migraciones o Prisma: incluir comandos exactos
+
+SUPUESTOS (solo si aplican):
+- ${assumptions.join("\n- ")}
+`.trim();
+  }
+
+  if (type === "guion") {
+    return `
+${baseHeader}
+
+FORMATO DE SALIDA (OBLIGATORIO):
+- Hook (0–3s)
+- Desarrollo (3–25s)
+- Cierre + CTA (25–35s)
+- Texto en pantalla (subtítulos clave)
+- B-roll / tomas sugeridas (genéricas)
+- 2 variantes de hook (A/B)
+
+SUPUESTOS (solo si aplican):
+- ${assumptions.join("\n- ")}
+`.trim();
+  }
+
+  if (type === "post") {
+    return `
+${baseHeader}
+
+FORMATO DE SALIDA (OBLIGATORIO):
+- Post final listo para publicar
+- 1 variante alternativa (más corta o más directa)
+- CTA suave al final
+- Hashtags (si aplica según plataforma)
+
+RESTRICCIONES:
+- Evita tecnicismos innecesarios.
+- Mantén claridad y utilidad.
+
+SUPUESTOS (solo si aplican):
+- ${assumptions.join("\n- ")}
+`.trim();
+  }
+
+  if (type === "plan") {
+    return `
+${baseHeader}
+
+FORMATO DE SALIDA (OBLIGATORIO):
+- Objetivo
+- Plan por fases (P0/P1/P2)
+- Lista de tareas accionables
+- Riesgos y mitigaciones
+- Siguiente paso recomendado (1)
+
+SUPUESTOS (solo si aplican):
+- ${assumptions.join("\n- ")}
+`.trim();
+  }
+
+  if (type === "checklist") {
+    return `
+${baseHeader}
+
+FORMATO DE SALIDA (OBLIGATORIO):
+- Checklist accionable (bullets)
+- Criterio de éxito
+- Errores comunes a evitar
+- Siguiente paso recomendado (1)
+
+SUPUESTOS (solo si aplican):
+- ${assumptions.join("\n- ")}
+`.trim();
+  }
+
+  if (type === "email") {
+    return `
+${baseHeader}
+
+FORMATO DE SALIDA (OBLIGATORIO):
+- Subject (2 opciones)
+- Cuerpo (versión normal)
+- Cuerpo (versión corta)
+- CTA claro (si aplica)
+
+SUPUESTOS (solo si aplican):
+- ${assumptions.join("\n- ")}
+`.trim();
+  }
+
+  // general
+  return `
+${baseHeader}
+
+FORMATO DE SALIDA (OBLIGATORIO):
+- Resultado final claro y accionable
+- Estructura con secciones si hace sentido
+- Un ejemplo mínimo si aplica
+
+SUPUESTOS (solo si aplican):
+- ${assumptions.join("\n- ")}
+`.trim();
+}
+
+/**
+ * -----------------------------
+ * OpenAI output (Pro)
+ * -----------------------------
+ */
+async function runOpenAI(input: string, targetAI: TargetAI) {
   const { default: OpenAI } = await import("openai");
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
   const system = `
-Eres un experto senior en ingeniería de prompts.
-
-OBJETIVO:
-Convertir el prompt del usuario en un PROMPT FINAL listo para copiar/pegar, específico y accionable.
-
-REGLAS OBLIGATORIAS:
-- Devuelve SOLO el prompt final optimizado (sin explicaciones).
-- No inventes datos. Si falta información, agrega una sección "SUPUESTOS" y marca claramente que son supuestos.
-- Incluye entregables concretos cuando el tema lo amerite (planes, listas, pasos, ejemplos).
-- Mantén el idioma original del usuario.
-- Formato requerido:
-
-ROL:
-CONTEXTO:
-OBJETIVO:
-SUPUESTOS (solo si faltan datos):
-INPUTS (solo los dados por el usuario):
-PASOS:
-FORMATO DE SALIDA:
-REGLAS Y RESTRICCIONES:
-CHECKLIST DE CALIDAD:
-PREGUNTAS MÍNIMAS (máximo 7):
+You are a senior prompt engineer.
+You MUST output ONLY in the required format and nothing else.
+Do NOT explain reasoning.
+Do NOT ask questions before producing the final prompt.
+If info is missing, include explicit ASSUMPTIONS (do not invent specific facts).
 `.trim();
 
-  const user = `
-Optimiza el siguiente prompt para ${targetAI.toUpperCase()}.
-
-PROMPT ORIGINAL:
-${input}
-`.trim();
+  const master = buildBulletproofPromptMaster(input, targetAI);
 
   const resp = await client.responses.create({
     model: OPENAI_MODEL,
     input: [
       { role: "system", content: system },
-      { role: "user", content: user },
+      { role: "user", content: master },
     ],
   });
 
   const text = resp.output_text?.trim() ?? "";
-  return text || buildMockOutput(input, targetAI);
+  return text || buildMockFinalPrompt(input, targetAI);
 }
 
-function buildInputPreview(input: string, max = 240) {
-  const clean = input.replace(/\s+/g, " ").trim();
-  if (clean.length <= max) return clean;
-  return clean.slice(0, max).trimEnd() + "…";
-}
-
+/**
+ * -----------------------------
+ * Route
+ * -----------------------------
+ */
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
   const userId = (session?.user as any)?.id as string | undefined;
   const email = session?.user?.email ?? undefined;
 
   if (!userId) {
-    return NextResponse.json(
-      { ok: false, message: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 });
   }
 
   let body: Body;
@@ -551,42 +442,26 @@ export async function POST(req: Request) {
   const targetAI = (body.targetAI ?? "chatgpt") as TargetAI;
   const mode: OptimizerMode = (body.mode ?? "standard") as OptimizerMode;
 
-  if (!input || input.length < 10) {
-    return badRequest("Input demasiado corto.");
-  }
+  if (!input || input.length < 10) return badRequest("Input demasiado corto.");
+  if (!["chatgpt", "claude", "gemini", "deepseek"].includes(targetAI)) return badRequest("targetAI inválido.");
+  if (!["standard", "unlimited"].includes(mode)) return badRequest("mode inválido.");
 
-  if (!["chatgpt", "claude", "gemini", "deepseek"].includes(targetAI)) {
-    return badRequest("targetAI inválido.");
-  }
-
-  if (!["standard", "unlimited"].includes(mode)) {
-    return badRequest("mode inválido.");
-  }
-
-  // =========================
   // ✅ Tier gating
-  // =========================
   const tier = await getSubscriptionTier(); // "none" | "basic" | "unlimited"
 
-  // Tier 2 requerido para modo unlimited
   if (mode === "unlimited") {
     const okUnlimited = await hasUnlimitedSubscription();
     if (!okUnlimited) {
-      return forbidden(
-        "Necesitas Pro Unlimited para usar este modo.",
-        "UNLIMITED_REQUIRED",
-        { requiredTier: "unlimited" }
-      );
+      return forbidden("Necesitas Pro Unlimited para usar este modo.", "UNLIMITED_REQUIRED", {
+        requiredTier: "unlimited",
+      });
     }
   }
 
-  // Para modo standard: Pro Basic o Unlimited cuentan como Pro
   const hasPro = tier !== "none";
   const plan: "free" | "pro" = hasPro ? "pro" : "free";
 
-  // =========================
-  // ✅ Free daily limit (solo standard)
-  // =========================
+  // ✅ Free daily limit
   if (plan === "free") {
     const from = startOfTodayUTC();
     const usedToday = await prisma.promptOptimizerRun.count({
@@ -595,21 +470,13 @@ export async function POST(req: Request) {
 
     if (usedToday >= FREE_DAILY_LIMIT) {
       return NextResponse.json(
-        {
-          ok: false,
-          message: `Límite diario alcanzado (${FREE_DAILY_LIMIT}/día).`,
-          code: "FREE_LIMIT_REACHED",
-        },
+        { ok: false, message: `Límite diario alcanzado (${FREE_DAILY_LIMIT}/día).`, code: "FREE_LIMIT_REACHED" },
         { status: 429 }
       );
     }
   }
 
-  // =========================
   // ✅ Engine decision
-  // =========================
-  // Nota: aquí NO conecto “unlimited” a otro engine por razones de policy.
-  // Tú puedes cambiar esta lógica para usar tu API cuando mode === "unlimited".
   const canUseOpenAI = plan === "pro" && Boolean(process.env.OPENAI_API_KEY);
   const engine: "openai" | "mock" = canUseOpenAI ? "openai" : "mock";
 
@@ -622,10 +489,11 @@ export async function POST(req: Request) {
       model = OPENAI_MODEL;
       output = await runOpenAI(input, targetAI);
     } else {
-      output = buildMockOutput(input, targetAI);
+      // ✅ Free: ahora sí devolvemos PROMPT FINAL (no maestro)
+      output = buildMockFinalPrompt(input, targetAI);
     }
   } catch {
-    output = buildMockOutput(input, targetAI);
+    output = buildMockFinalPrompt(input, targetAI);
     model = null;
   }
 
@@ -644,14 +512,8 @@ export async function POST(req: Request) {
     select: { id: true },
   });
 
-  // ===========================
-  // ✅ Audit event: optimizer.run
-  // ===========================
-  const storeFullEnv =
-    String(process.env.AUDIT_STORE_OPTIMIZER_INPUT ?? "").toLowerCase() ===
-    "true";
-
-  // ✅ Unlimited: SIEMPRE guardar fullInput
+  // ✅ Audit
+  const storeFullEnv = String(process.env.AUDIT_STORE_OPTIMIZER_INPUT ?? "").toLowerCase() === "true";
   const storeFull = mode === "unlimited" ? true : storeFullEnv;
 
   await logEvent({
@@ -662,8 +524,8 @@ export async function POST(req: Request) {
     entityId: run.id,
     meta: {
       runId: run.id,
-      mode, // ✅
-      subscriptionTier: tier, // ✅ "none" | "basic" | "unlimited"
+      mode,
+      subscriptionTier: tier,
       targetAI,
       plan,
       engine,

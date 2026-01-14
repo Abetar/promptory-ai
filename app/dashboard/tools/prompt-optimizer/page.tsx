@@ -5,17 +5,13 @@ import Link from "next/link";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getSubscriptionTier } from "@/lib/subscription";
+import { prisma } from "@/lib/prisma";
 import PromptOptimizerClient from "./PromptOptimizerClient";
 
 export default async function PromptOptimizerPage() {
   const session = await getServerSession(authOptions);
   const isLoggedIn = Boolean(session?.user?.email);
 
-  // ✅ Tier real (none | basic | unlimited)
-  const tier = isLoggedIn ? await getSubscriptionTier() : "none";
-  const isPro = tier !== "none";
-
-  // ❌ Solo bloqueamos por login (no por suscripción)
   if (!isLoggedIn) {
     return (
       <div className="mx-auto w-full max-w-3xl px-4 py-10 space-y-6">
@@ -50,7 +46,23 @@ export default async function PromptOptimizerPage() {
     );
   }
 
-  // ✅ Badge + CTA según tier
+  const userId = (session?.user as any)?.id as string | undefined;
+
+  // ✅ Tier real (none | basic | unlimited)
+  const tier = await getSubscriptionTier();
+  const isPro = tier !== "none";
+
+  // ✅ Traer Prompt Base (si existe)
+  // Asume: model UserPromptBase { userId @unique, content String, updatedAt DateTime @updatedAt }
+  const promptBase = userId
+    ? await prisma.userPromptBase.findUnique({
+        where: { userId },
+        select: { content: true, updatedAt: true },
+      })
+    : null;
+
+  const initialInput = promptBase?.content ?? "";
+
   const badgeClass =
     tier === "unlimited"
       ? "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-200"
@@ -73,9 +85,10 @@ export default async function PromptOptimizerPage() {
       <div className="flex items-start justify-between gap-3">
         <div>
           <div
-            className={["inline-flex items-center rounded-full border px-3 py-1 text-xs", badgeClass].join(
-              " "
-            )}
+            className={[
+              "inline-flex items-center rounded-full border px-3 py-1 text-xs",
+              badgeClass,
+            ].join(" ")}
           >
             {badgeText}
           </div>
@@ -86,6 +99,19 @@ export default async function PromptOptimizerPage() {
           <p className="mt-2 text-sm text-neutral-400">
             Pega tu prompt → recibe una versión mejor.
           </p>
+
+          {/* ✅ micro-info si ya tiene Prompt Base */}
+          {promptBase?.updatedAt ? (
+            <p className="mt-2 text-xs text-neutral-500">
+              Prompt Base cargado (última edición:{" "}
+              {new Date(promptBase.updatedAt).toLocaleString()}
+              ).
+            </p>
+          ) : (
+            <p className="mt-2 text-xs text-neutral-500">
+              Tip: crea tu Prompt Base para ahorrar tiempo cada vez.
+            </p>
+          )}
         </div>
 
         {/* ✅ CTA: upgrade */}
@@ -106,8 +132,8 @@ export default async function PromptOptimizerPage() {
         ) : null}
       </div>
 
-      {/* ✅ No bloqueamos: Free con límites, Pro Basic, Pro Unlimited */}
-      <PromptOptimizerClient />
+      {/* ✅ Pasamos Prompt Base para precargar el textarea */}
+      <PromptOptimizerClient initialInput={initialInput} isPro={isPro} tier={tier} />
     </div>
   );
 }
