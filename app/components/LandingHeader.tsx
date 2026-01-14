@@ -12,30 +12,40 @@ export default function LandingHeader() {
 
   return (
     <header className="relative z-50 isolate">
-      <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between">
+      <div className="mx-auto max-w-6xl px-6 py-6 flex items-center justify-between gap-4">
         <Link
           href="/"
-          className="flex items-center gap-3"
+          className="flex items-center gap-3 min-w-0"
           aria-label="Ir al inicio"
+          onClick={closeAllDetails}
         >
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 min-w-0">
             <Image
               src="/logo.jpeg"
               alt="Promptory AI"
-              width={100}
-              height={100}
+              width={56}
+              height={56}
               priority
+              className="rounded-xl"
             />
-            <span className="font-semibold tracking-tight text-xl leading-none">
-              Promptory AI
-            </span>
-          </div>{" "}
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <span className="font-semibold tracking-tight text-lg leading-none truncate">
+                  Promptory AI
+                </span>
+                {/* Micro reforzador (solo desktop) */}
+                <span className="hidden lg:inline-flex items-center rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[11px] text-white/70">
+                  Resultados desde el primer intento
+                </span>
+              </div>
+              <p className="hidden sm:block text-xs text-white/50 truncate">
+                Optimiza → ejecuta → guarda → reutiliza
+              </p>
+            </div>
+          </div>
         </Link>
 
-        <nav
-          className="flex items-center gap-2"
-          aria-label="Navegación principal"
-        >
+        <nav className="flex items-center gap-2" aria-label="Navegación principal">
           {/* Links principales */}
           <a
             href="#optimizer"
@@ -51,9 +61,10 @@ export default function LandingHeader() {
             Workflows
           </a>
 
-          {/* Dropdown "Más" */}
+          {/* Dropdown "Más" (desktop) */}
           <details data-nav className="hidden lg:block relative">
             <summary
+              aria-label="Abrir menú de secciones"
               className="list-none cursor-pointer rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
             >
@@ -90,6 +101,7 @@ export default function LandingHeader() {
           {/* Mobile Menu */}
           <details data-nav className="lg:hidden relative">
             <summary
+              aria-label="Abrir menú"
               className="list-none cursor-pointer rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-sm text-white/80 hover:bg-white/10 transition
               focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/30"
             >
@@ -137,30 +149,31 @@ export default function LandingHeader() {
 
               <div className="my-2 h-px bg-white/10" />
 
+              {/* Login como secundario */}
               <Link
                 href="/login"
                 onClick={closeAllDetails}
-                className="block rounded-xl px-3 py-2 text-sm text-white/80 hover:bg-white/10 transition"
+                className="block rounded-xl px-3 py-2 text-sm text-white/70 hover:bg-white/10 hover:text-white transition"
               >
                 Iniciar sesión
               </Link>
             </div>
           </details>
 
-          {/* Auth discreto */}
+          {/* Login (secundario, discreto) */}
           <Link
             href="/login"
-            className="hidden sm:inline-flex rounded-xl px-3 py-2 text-sm text-white/70 hover:text-white transition"
+            className="hidden md:inline-flex rounded-xl px-3 py-2 text-sm text-white/60 hover:text-white transition"
           >
             Iniciar sesión
           </Link>
 
-          {/* CTA principal */}
+          {/* CTA principal (único protagonista) */}
           <Link
             href="/login"
-            className="rounded-xl bg-white text-black px-4 py-2 text-sm font-medium hover:bg-white/90 transition"
+            className="rounded-xl bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90 transition"
           >
-            Optimiza tu primer prompt
+            Optimizar prompt
           </Link>
         </nav>
       </div>
