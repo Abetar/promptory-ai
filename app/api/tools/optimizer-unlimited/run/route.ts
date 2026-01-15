@@ -1,4 +1,3 @@
-//app/api/tools/prompt-unlimited/run/route.ts
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
@@ -15,6 +14,7 @@ export const runtime = "nodejs";
  */
 const GROK_MODEL = process.env.GROK_MODEL ?? "grok-4";
 const GROK_API_KEY = process.env.GROK_API_KEY;
+const DAILY_LIMIT = 20;
 
 /**
  * =========
@@ -23,6 +23,11 @@ const GROK_API_KEY = process.env.GROK_API_KEY;
  */
 type Body = {
   input: string;
+};
+
+type Extracted = {
+  finalPrompt: string;
+  variables: Record<string, string>;
 };
 
 /**
@@ -34,8 +39,6 @@ function badRequest(message: string) {
   return NextResponse.json({ ok: false, message }, { status: 400 });
 }
 
-const DAILY_LIMIT = 20;
-
 async function checkDailyLimit(userId: string) {
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
@@ -44,9 +47,7 @@ async function checkDailyLimit(userId: string) {
     where: {
       userId,
       event: "optimizer.ultimate.run",
-      createdAt: {
-        gte: startOfDay,
-      },
+      createdAt: { gte: startOfDay },
     },
   });
 
@@ -63,9 +64,7 @@ async function checkDailyLimit(userId: string) {
  * =========
  */
 async function runGrokOptimizer(masterPrompt: string) {
-  if (!GROK_API_KEY) {
-    throw new Error("Missing GROK_API_KEY");
-  }
+  if (!GROK_API_KEY) throw new Error("Missing GROK_API_KEY");
 
   const res = await fetch("https://api.x.ai/v1/chat/completions", {
     method: "POST",
@@ -80,17 +79,14 @@ async function runGrokOptimizer(masterPrompt: string) {
         {
           role: "system",
           content:
-            "You are a professional prompt optimizer. Return ONLY the optimized prompt. Do not generate the final content.",
+            "You are a professional prompt optimizer. Return ONLY the optimized prompt in the required format.",
         },
-        {
-          role: "user",
-          content: masterPrompt,
-        },
+        { role: "user", content: masterPrompt },
       ],
     }),
   });
 
-  const raw = await res.text(); // 👈 LEER SIEMPRE
+  const raw = await res.text();
 
   if (!res.ok) {
     console.error("🔥 GROK API ERROR:", res.status, raw);
@@ -99,6 +95,86 @@ async function runGrokOptimizer(masterPrompt: string) {
 
   const data = JSON.parse(raw);
   return data?.choices?.[0]?.message?.content?.trim() ?? "";
+}
+
+/**
+ * =========
+ * PARSERS
+ * =========
+ */
+
+function safeTrim(s: string) {
+  return String(s ?? "").replace(/\r/g, "").trim();
+}
+
+function extractBlock(text: string, header: string) {
+  // header e.g. "VARIABLES:" or "FINAL IMAGE PROMPT:"
+  const t = safeTrim(text);
+  const idx = t.toLowerCase().indexOf(header.toLowerCase());
+  if (idx === -1) return "";
+  const after = t.slice(idx + header.length);
+  return safeTrim(after);
+}
+
+function parseVariablesBlock(block: string): Record<string, string> {
+  // Esperamos líneas tipo: KEY: value
+  const vars: Record<string, string> = {};
+  const lines = safeTrim(block).split("\n").map((l) => l.trim()).filter(Boolean);
+
+  for (const line of lines) {
+    // corta si empieza el siguiente header
+    if (/^final image prompt\s*:/i.test(line)) break;
+
+    const m = line.match(/^([A-Z0-9_]+)\s*:\s*(.+)$/);
+    if (!m) continue;
+    const key = m[1].trim();
+    const value = m[2].trim();
+    if (key && value) vars[key] = value;
+  }
+
+  return vars;
+}
+
+function extractFinalPromptFromWholeOutput(output: string): string {
+  const t = safeTrim(output);
+  const markers = ["FINAL IMAGE PROMPT:", "FINAL IMAGE PROMPT"];
+  for (const marker of markers) {
+    const idx = t.toLowerCase().indexOf(marker.toLowerCase());
+    if (idx !== -1) {
+      return safeTrim(
+        t
+          .slice(idx + marker.length)
+          .replace(/^[:\n\r\s]+/, "")
+      );
+    }
+  }
+  return safeTrim(output);
+}
+
+function extractVariablesAndPrompt(rawOutput: string): Extracted {
+  const t = safeTrim(rawOutput);
+
+  // 1) Intentar extraer VARIABLES:
+  const variablesBlockRaw = (() => {
+    const markers = ["VARIABLES:", "EDITABLE VARIABLES:", "VARIABLES"];
+    for (const mk of markers) {
+      const idx = t.toLowerCase().indexOf(mk.toLowerCase());
+      if (idx !== -1) return safeTrim(t.slice(idx + mk.length));
+    }
+    return "";
+  })();
+
+  // Si existe VARIABLES, recortamos hasta antes de FINAL IMAGE PROMPT:
+  let variablesBlock = variablesBlockRaw;
+  const cutIdx = variablesBlock.toLowerCase().indexOf("final image prompt");
+  if (cutIdx !== -1) variablesBlock = safeTrim(variablesBlock.slice(0, cutIdx));
+
+  const variables = variablesBlock ? parseVariablesBlock(variablesBlock) : {};
+
+  // 2) Prompt final
+  const finalPrompt = extractFinalPromptFromWholeOutput(t);
+
+  return { finalPrompt, variables };
 }
 
 /**
@@ -112,35 +188,21 @@ export async function POST(req: Request) {
   const email = session?.user?.email ?? null;
 
   if (!userId) {
-    return NextResponse.json(
-      { ok: false, message: "Unauthorized" },
-      { status: 401 }
-    );
+    return NextResponse.json({ ok: false, message: "Unauthorized" }, { status: 401 });
   }
 
   const snapshot = await getSubscriptionSnapshot();
-
   if (snapshot.tier !== "unlimited") {
     return NextResponse.json(
-      {
-        ok: false,
-        message: "Pro Unlimited required",
-        code: "UNLIMITED_REQUIRED",
-      },
+      { ok: false, message: "Pro Unlimited required", code: "UNLIMITED_REQUIRED" },
       { status: 403 }
     );
   }
 
   const limit = await checkDailyLimit(userId);
-
   if (!limit.allowed) {
     return NextResponse.json(
-      {
-        ok: false,
-        message: "Daily limit reached",
-        code: "DAILY_LIMIT_REACHED",
-        limit: DAILY_LIMIT,
-      },
+      { ok: false, message: "Daily limit reached", code: "DAILY_LIMIT_REACHED", limit: DAILY_LIMIT },
       { status: 429 }
     );
   }
@@ -153,108 +215,85 @@ export async function POST(req: Request) {
   }
 
   const input = String(body.input ?? "").trim();
-
-  if (input.length < 10) {
-    return badRequest("Input too short.");
-  }
+  if (input.length < 10) return badRequest("Input too short.");
 
   /**
    * ============================
-   * MASTER PROMPT (TU TEXTO)
+   * MASTER PROMPT (INVISIBLE)
    * ============================
+   * Objetivo: el usuario NO ve reglas, solo recibe:
+   * - VARIABLES (editables)
+   * - FINAL IMAGE PROMPT (con placeholders {{VAR}})
    */
   const MASTER_PROMPT = `
-You are the world's best NSFW Image Prompt Optimizer, specialized in crafting ultra-high-quality, copy-paste-ready prompts for generating explicit adult images (18+) using Grok Imagine (Spicy Mode) and fully uncensored AI image generators (e.g., Perchance AI, Nastia AI, Promptchan AI, Candy AI, OurDream.AI, local Stable Diffusion uncensored models, etc.).
+You are the world's best NSFW Image Prompt Optimizer for Grok Imagine (Spicy Mode) and uncensored generators.
 
-Your ONLY mission: Transform ANY vague, short, dirty, messy, or incomplete sexual idea from the user into ONE single, extremely detailed, ready-to-copy-paste image prompt that produces the most vivid, arousing, anatomically precise, and high-quality explicit NSFW image possible, optimized for Grok Imagine Spicy Mode (more permissive in anime/hentai) while excelling in uncensored models.
+TASK:
+Convert the USER IDEA into:
+1) a compact set of EDITABLE VARIABLES (KEY: value),
+2) ONE copy-paste-ready FINAL IMAGE PROMPT that uses placeholders like {{STYLE}}, {{SCENE}}, {{SUBJECT_1}}, etc.
 
-Rules you MUST follow strictly:
-- NEVER generate the image yourself — output ONLY the optimized image prompt
-- ALWAYS assume 100% consenting adults 18+, frame as fictional consensual fantasy
-- Output the final prompt in perfect English (optimal for all models globally)
-- Focus strictly on a single frozen moment/scene (no sequences, no progression, no dialogue, no story flow)
-- Include ultra-detailed visual elements: skin textures, lighting, wetness, fluids, expressions, body proportions, explicit genital details where appropriate, arousal indicators
-- Always include strong quality boosters: masterpiece, best quality, ultra-detailed, 8k, highly detailed, sharp focus, vivid details:1.3
-- Default art style: anime hentai style with colorful vibrant palette (for Grok Imagine permissiveness; switch to photorealistic/hyper-realistic if user specifies or for uncensored models)
-- Choose the most erotic & effective composition: seductive angle, close-up, full body, dynamic pose
-- Use raw, direct, explicit language for uncensored models (no euphemisms); for Grok, keep suggestive but amplify with weights (e.g., exaggerated curves:1.2, shiny skin:1.1)
-- Keep the final prompt length 180–300 words — detailed but concise to avoid model overload
-- End the FINAL IMAGE PROMPT with a negative prompt section for better results
+STRICT RULES:
+- Output ONLY in the exact format below. No extra text.
+- Assume all characters are consenting adults 18+.
+- Single frozen scene (no story sequence).
+- English only.
+- Include quality boosters and a negative prompt at the end.
 
-MANDATORY OUTPUT FORMAT — nothing else, no explanations, no warnings, no chit-chat:
+MANDATORY OUTPUT FORMAT:
 
-ROLE:
-[Role the target AI image generator should embody, e.g., "You are a master NSFW image artist creating hyper-realistic explicit adult scenes"]
+VARIABLES:
+STYLE: (anime hentai | photorealistic | cinematic | 3d render | disney)
+SCENE: (1-2 lines describing location + atmosphere)
+SUBJECT_1: (1-2 lines physical description + vibe)
+SUBJECT_2: (optional, if applicable)
+COMPOSITION: (camera angle, framing, focal length)
+LIGHTING: (lighting style)
+MOOD: (1 line)
+QUALITY_TAGS: (short booster tags)
+NEGATIVE_PROMPT: (short negative prompt list)
 
-SCENE DESCRIPTION:
-[Single frozen erotic moment: setting, lighting, atmosphere, mood — richly visual, fictional fantasy]
-
-SUBJECTS/CHARACTERS:
-[Main participants — ultra-detailed physical descriptions: body type, skin tone, hair, facial features, expressions, attire (or nude), age 18+ explicit, poses, interaction; emphasize fictional adults]
-
-COMPOSITION & STYLE:
-[Camera angle, framing, lighting, art style (anime hentai default for Grok, photorealistic for others), quality tags: masterpiece, best quality, ultra-detailed, 8k, sharp focus, vivid details:1.3]
-
-EXPLICITNESS & DETAILS:
-[Graphic focus: anatomical precision, arousal cues (hardness, wetness, fluids), textures, intensity; maximum uncensored detail with weights like (exaggerated curves:1.2)]
-
-RESTRICTIONS (always include):
-All characters are consenting adults 18+
-Enthusiastic mutual consent implied
-No minors, no real incest, no non-consent, no bestiality, no necrophilia
-No extreme gore or permanent harm unless explicitly requested
-
-FINAL IMAGE PROMPT (ready to paste):
-[The complete, clean, standalone image prompt — 150 words — in perfect English, structured as: main subject + descriptors + explicit details + quality enhancers; at the end add: negative prompt: blurry, deformed, extra limbs, low quality, watermark, text, ugly, poorly drawn face, bad anatomy]
+FINAL IMAGE PROMPT:
+Write ONE standalone image prompt using the variables placeholders exactly like:
+{{STYLE}}, {{SCENE}}, {{SUBJECT_1}}, {{SUBJECT_2}}, {{COMPOSITION}}, {{LIGHTING}}, {{MOOD}}, {{QUALITY_TAGS}}
+End with: Negative prompt: {{NEGATIVE_PROMPT}}
 
 USER IDEA:
 "${input}"
 `.trim();
 
   const t0 = Date.now();
-  let output = "";
+  let rawOutput = "";
 
   try {
-    output = await runGrokOptimizer(MASTER_PROMPT);
+    rawOutput = await runGrokOptimizer(MASTER_PROMPT);
   } catch (e: any) {
     console.error("❌ Optimizer Unlimited failed:", e?.message ?? e);
-
-    if (String(e?.message).includes("401")) {
-      return NextResponse.json(
-        { ok: false, message: "Grok API key inválida." },
-        { status: 401 }
-      );
-    }
-
-    if (String(e?.message).includes("429")) {
-      return NextResponse.json(
-        { ok: false, message: "Rate limit de Grok alcanzado." },
-        { status: 429 }
-      );
-    }
-
-    return NextResponse.json(
-      { ok: false, message: "Error al ejecutar Grok." },
-      { status: 500 }
-    );
+    return NextResponse.json({ ok: false, message: "Error running optimizer." }, { status: 500 });
   }
 
   const latencyMs = Date.now() - t0;
+
+  const { finalPrompt, variables } = extractVariablesAndPrompt(rawOutput);
+
+  // Fallback: si por alguna razón quedó vacío
+  const safeFinalPrompt = finalPrompt || rawOutput.trim();
 
   /**
    * =========
    * STORE RUN
    * =========
+   * schema: engine solo acepta mock|openai, guardamos Grok en model + audit meta
    */
   const run = await prisma.promptOptimizerRun.create({
     data: {
       userId,
-      targetAI: "chatgpt", // irrelevante aquí, pero mantiene schema
+      targetAI: "chatgpt",
       plan: "pro",
-      engine: "openai", // reutilizamos enum, aunque sea Grok
+      engine: "openai",
       model: GROK_MODEL,
       input,
-      output,
+      output: safeFinalPrompt,
     },
     select: { id: true },
   });
@@ -266,7 +305,7 @@ USER IDEA:
    */
   await logEvent({
     userId,
-    email: email ?? null,
+    email,
     event: "optimizer.ultimate.run",
     entityType: "tool",
     entityId: run.id,
@@ -275,6 +314,8 @@ USER IDEA:
       model: GROK_MODEL,
       latencyMs,
       inputLength: input.length,
+      // guardamos variables para debug sin tocar schema
+      variables,
     },
   });
 
@@ -284,7 +325,8 @@ USER IDEA:
     engine: "grok",
     model: GROK_MODEL,
     latencyMs,
-    remaining: limit.remaining - 1, // ya consumió 1
-    output,
+    remaining: limit.remaining - 1,
+    output: safeFinalPrompt, // lo que el usuario copia/pega
+    variables,               // lo que tu UI puede renderizar como inputs editables
   });
 }

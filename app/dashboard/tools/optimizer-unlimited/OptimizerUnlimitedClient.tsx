@@ -19,7 +19,9 @@ type ApiOk = {
   engine: "grok";
   model: string;
   latencyMs: number;
-  output: string;
+  remaining?: number;
+  output: string; // ✅ output limpio (idealmente FINAL PROMPT)
+  variables?: Record<string, string>; // ✅ variables editables opcionales
 };
 
 type ApiErr = {
@@ -43,21 +45,71 @@ type UsageErr = {
 };
 
 const AI_TARGETS = [
-  { label: "Perchance AI", href: "https://perchance.org/ai-text-to-image-generator" },
-  { label: "Nastia AI", href: "https://www.nastia.ai/tools/uncensored-ai-image-generator" },
+  {
+    label: "Perchance AI",
+    href: "https://perchance.org/ai-text-to-image-generator",
+  },
+  {
+    label: "Nastia AI",
+    href: "https://www.nastia.ai/tools/uncensored-ai-image-generator",
+  },
   { label: "Promptchan AI", href: "https://promptchan.com/" },
   { label: "Candy AI", href: "https://candy.ai/" },
-  { label: "OurDream.AI", href: "https://ourdream.ai/", },
-  { label: "Secrets AI", href: "https://secretdesires.ai/", },
-  { label: "Soulkyn AI", href: "https://soulkyn.com/", },
-  { label: "Grok (xAI)", href: "https://grok.x.ai/", },
+  { label: "OurDream.AI", href: "https://ourdream.ai/" },
+  { label: "Secrets AI", href: "https://secretdesires.ai/" },
+  { label: "Soulkyn AI", href: "https://soulkyn.com/" },
+  { label: "Grok (xAI)", href: "https://grok.x.ai/" },
 ];
+
+// ---------------------------
+// Helpers: variables + template
+// ---------------------------
+function safeString(v: unknown) {
+  return typeof v === "string" ? v : v == null ? "" : String(v);
+}
+
+function escapeRegExp(str: string) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function replacePlaceholders(template: string, vars: Record<string, string>) {
+  let out = template ?? "";
+  for (const [k, v] of Object.entries(vars ?? {})) {
+    const key = k.trim();
+    if (!key) continue;
+    const value = safeString(v).trim();
+
+    const re = new RegExp(`\\{\\{\\s*${escapeRegExp(key)}\\s*\\}\\}`, "g");
+    out = out.replace(re, value);
+  }
+  return out.trim();
+}
+
+function detectMissingVars(template: string, vars: Record<string, string>) {
+  const matches = template.match(/\{\{\s*([A-Z0-9_]+)\s*\}\}/g) ?? [];
+  const keys = matches
+    .map((m) => m.replace(/\{\{|\}\}/g, "").trim())
+    .filter(Boolean);
+
+  const unique = Array.from(new Set(keys));
+  const missing = unique.filter((k) => !safeString(vars[k]).trim());
+
+  return { keys: unique, missing };
+}
 
 export default function OptimizerUnlimitedClient() {
   const [ageOk, setAgeOk] = useState(false);
 
   const [raw, setRaw] = useState("");
-  const [optimized, setOptimized] = useState("");
+
+  // ✅ Template (lo que viene del backend) + Final (aplicado)
+  const [template, setTemplate] = useState("");
+  const [finalPrompt, setFinalPrompt] = useState("");
+  const [applied, setApplied] = useState(false);
+
+  // ✅ Variables editables (si backend las manda)
+  const [variables, setVariables] = useState<Record<string, string>>({});
+
   const [meta, setMeta] = useState<{
     engine?: string;
     model?: string;
@@ -92,12 +144,19 @@ export default function OptimizerUnlimitedClient() {
 
   useEffect(() => {
     setCopied(false);
-  }, [optimized]);
+  }, [finalPrompt, template, applied]);
 
   useEffect(() => {
     return () => stopProgress();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Si el usuario edita variables, marcamos como “no aplicado”
+  useEffect(() => {
+    if (!Object.keys(variables).length) return;
+    setApplied(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(variables)]);
 
   async function fetchUsage() {
     setUsageErr(null);
@@ -105,9 +164,6 @@ export default function OptimizerUnlimitedClient() {
 
     try {
       const res = await fetch(API.usage, { method: "GET" });
-
-      // Si no hay sesión o no tienes Unlimited, el backend suele devolver 401/403
-      // pero igual intentamos leer JSON de error
       const data = (await res.json()) as UsageOk | UsageErr;
 
       if (!res.ok || !("ok" in data) || data.ok === false) {
@@ -150,7 +206,8 @@ export default function OptimizerUnlimitedClient() {
 
   const limitReached = useMemo(() => {
     if (!usage) return false;
-    if (usage.dailyLimit == null) return false;
+    if (usage.dailyLimit == null && typeof usage.remaining !== "number")
+      return false;
     const remaining = remainingRuns ?? 0;
     return remaining <= 0;
   }, [usage, remainingRuns]);
@@ -169,10 +226,26 @@ export default function OptimizerUnlimitedClient() {
     return `Reinicia: ${d.toLocaleString()}`;
   }, [usage?.resetsAt]);
 
-  // ✅ Mostrar pills SOLO cuando ya terminó y ya existe optimized
+  // ✅ Mostrar pills SOLO cuando ya terminó y ya existe output
   const showAiPills = useMemo(() => {
-    return optimized.trim().length > 0 && !pending;
-  }, [optimized, pending]);
+    const out = (applied ? finalPrompt : template).trim();
+    return out.length > 0 && !pending;
+  }, [finalPrompt, template, applied, pending]);
+
+  const hasVariables = useMemo(
+    () => Object.keys(variables).length > 0,
+    [variables]
+  );
+
+  const displayOutput = useMemo(() => {
+    const out = applied ? finalPrompt : template;
+    return (out ?? "").trim();
+  }, [applied, finalPrompt, template]);
+
+  const missingVarsInfo = useMemo(() => {
+    if (!template) return { keys: [], missing: [] as string[] };
+    return detectMissingVars(template, variables);
+  }, [template, variables]);
 
   // =========
   // ACTIONS
@@ -222,7 +295,11 @@ export default function OptimizerUnlimitedClient() {
 
   function resetAll() {
     setRaw("");
-    setOptimized("");
+    setTemplate("");
+    setFinalPrompt("");
+    setVariables({});
+    setApplied(false);
+
     setMeta(null);
     setState(null);
     setCopied(false);
@@ -232,16 +309,29 @@ export default function OptimizerUnlimitedClient() {
     setProgress(0);
   }
 
+  function applyVariables() {
+    if (!template) return;
+    const appliedText = replacePlaceholders(template, variables);
+    setFinalPrompt(appliedText);
+    setApplied(true);
+  }
+
   async function onRun() {
     setState(null);
 
     if (!ageOk) {
-      setState({ ok: false, message: "Debes confirmar +18 para usar esta tool." });
+      setState({
+        ok: false,
+        message: "Debes confirmar +18 para usar esta tool.",
+      });
       return;
     }
 
     if (!usage) {
-      setState({ ok: false, message: "Cargando tu uso... intenta de nuevo en un momento." });
+      setState({
+        ok: false,
+        message: "Cargando tu uso... intenta de nuevo en un momento.",
+      });
       return;
     }
 
@@ -283,16 +373,24 @@ export default function OptimizerUnlimitedClient() {
         const data = (await res.json()) as ApiOk | ApiErr;
 
         if (!res.ok || !("ok" in data) || data.ok === false) {
-          const err = (data as ApiErr) ?? { ok: false, message: "Error desconocido." };
+          const err = (data as ApiErr) ?? {
+            ok: false,
+            message: "Error desconocido.",
+          };
 
           progressDoneRef.current = true;
           stopProgress();
           setProgress(0);
 
           setState(err);
-          setOptimized("");
+          setTemplate("");
+          setFinalPrompt("");
+          setVariables({});
+          setApplied(false);
+
           setMeta(null);
           setCopied(false);
+
           await fetchUsage();
           return;
         }
@@ -304,12 +402,30 @@ export default function OptimizerUnlimitedClient() {
         stopProgress();
         setProgress(100);
 
-        setOptimized(ok.output);
+        // ✅ Guardar template + variables
+        const out = safeString(ok.output).trim();
+
+        setTemplate(out);
+        setFinalPrompt(out);
+        setApplied(false);
+
+        const apiVars = ok.variables ?? {};
+        const detected = detectMissingVars(out, apiVars); // keys = placeholders en el template
+
+        // ✅ Merge: asegura que TODO placeholder exista como input editable
+        const mergedVars: Record<string, string> = { ...apiVars };
+        for (const k of detected.keys) {
+          if (!(k in mergedVars)) mergedVars[k] = "";
+        }
+
+        setVariables(mergedVars);
+
         setMeta({
           engine: ok.engine,
           model: ok.model,
           latencyMs: ok.latencyMs,
         });
+
         setCopied(false);
 
         // ✅ refrescar uso post-run
@@ -319,8 +435,16 @@ export default function OptimizerUnlimitedClient() {
         stopProgress();
         setProgress(0);
 
-        setState({ ok: false, message: "No se pudo conectar con el servidor." });
-        setOptimized("");
+        setState({
+          ok: false,
+          message: "No se pudo conectar con el servidor.",
+        });
+
+        setTemplate("");
+        setFinalPrompt("");
+        setVariables({});
+        setApplied(false);
+
         setMeta(null);
         setCopied(false);
       }
@@ -328,10 +452,11 @@ export default function OptimizerUnlimitedClient() {
   }
 
   async function onCopy() {
-    if (!optimized) return;
+    const text = displayOutput;
+    if (!text) return;
 
     try {
-      await navigator.clipboard.writeText(optimized);
+      await navigator.clipboard.writeText(text);
       setCopied(true);
       window.setTimeout(() => setCopied(false), 1500);
     } catch {
@@ -360,12 +485,13 @@ export default function OptimizerUnlimitedClient() {
                 </div>
                 <p className="mt-1 text-sm text-neutral-400">
                   Esta herramienta es{" "}
-                  <span className="text-fuchsia-200 font-semibold">NSFW</span> y está reservada para adultos.
-                  Al continuar confirmas que tienes{" "}
+                  <span className="text-fuchsia-200 font-semibold">NSFW</span> y
+                  está reservada para adultos. Al continuar confirmas que tienes{" "}
                   <span className="text-neutral-200 font-semibold">18+</span>.
                 </p>
                 <p className="mt-2 text-xs text-neutral-500">
-                  Guardamos esta confirmación solo en este navegador (localStorage).
+                  Guardamos esta confirmación solo en este navegador
+                  (localStorage).
                 </p>
               </div>
             </div>
@@ -391,7 +517,8 @@ export default function OptimizerUnlimitedClient() {
               <div className="flex items-start gap-2">
                 <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-200" />
                 <div>
-                  <b>Reglas:</b> solo adultos, consentimiento explícito, nada ilegal.
+                  <b>Reglas:</b> solo adultos, consentimiento explícito, nada
+                  ilegal.
                 </div>
               </div>
             </div>
@@ -409,14 +536,17 @@ export default function OptimizerUnlimitedClient() {
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <div className="text-sm font-semibold text-neutral-100">Optimizer Unlimited</div>
+              <div className="text-sm font-semibold text-neutral-100">
+                Optimizer Unlimited
+              </div>
               <span className="text-xs rounded-full border border-fuchsia-500/30 bg-fuchsia-500/10 px-2 py-1 text-fuchsia-200">
                 Ultimate / NSFW
               </span>
             </div>
 
             <div className="text-xs text-neutral-500">
-              Esta tool usa Grok. Output: solo prompts optimizados (no genera contenido final dentro de Promptory).
+              Esta tool usa Grok. Output: solo prompts optimizados (no genera
+              contenido final dentro de Promptory).
             </div>
 
             {/* Usage line */}
@@ -442,11 +572,20 @@ export default function OptimizerUnlimitedClient() {
                         {remainingRuns ?? 0}
                       </span>
                     </span>
+                  ) : typeof usage.remaining === "number" ? (
+                    <span className="text-neutral-500">
+                      Restantes:{" "}
+                      <span className="text-neutral-200 font-semibold">
+                        {remainingRuns ?? 0}
+                      </span>
+                    </span>
                   ) : (
                     <span className="text-neutral-500">Ilimitado</span>
                   )}
 
-                  {resetsLabel ? <span className="text-neutral-600">{resetsLabel}</span> : null}
+                  {resetsLabel ? (
+                    <span className="text-neutral-600">{resetsLabel}</span>
+                  ) : null}
                 </>
               ) : (
                 <span className="text-neutral-500">Uso no disponible</span>
@@ -477,7 +616,7 @@ export default function OptimizerUnlimitedClient() {
               Limpiar
             </button>
 
-            {optimized ? (
+            {displayOutput ? (
               <button
                 type="button"
                 onClick={onCopy}
@@ -513,7 +652,11 @@ export default function OptimizerUnlimitedClient() {
                 : "bg-neutral-100 text-neutral-950 hover:opacity-90",
             ].join(" ")}
           >
-            {pending ? "Optimizando..." : limitReached ? "Límite alcanzado" : "Optimizar (Ultimate)"}
+            {pending
+              ? "Optimizando..."
+              : limitReached
+              ? "Límite alcanzado"
+              : "Optimizar (Ultimate)"}
           </button>
 
           <div className="text-xs text-neutral-500">Mínimo 10 caracteres.</div>
@@ -527,10 +670,14 @@ export default function OptimizerUnlimitedClient() {
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white/80" />
                 <span>
                   Optimizando…{" "}
-                  <span className="font-semibold text-neutral-100">{progress}%</span>
+                  <span className="font-semibold text-neutral-100">
+                    {progress}%
+                  </span>
                 </span>
               </div>
-              <div className="text-xs text-neutral-500">Grok puede tardar ~1 min</div>
+              <div className="text-xs text-neutral-500">
+                Grok puede tardar ~1 min
+              </div>
             </div>
 
             <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-white/10">
@@ -580,27 +727,147 @@ export default function OptimizerUnlimitedClient() {
           </div>
         ) : null}
 
-        <div className="rounded-xl bg-neutral-950 border border-neutral-800 p-4 space-y-3">
-          <div>
-            <div className="text-sm font-semibold text-neutral-100">Optimizado</div>
-
-            {meta ? (
-              <div className="mt-1 text-xs text-neutral-500">
-                engine: <span className="text-neutral-300">{meta.engine}</span>
-                {meta.model ? (
-                  <>
-                    {" "}
-                    · model: <span className="text-neutral-300">{meta.model}</span>
-                  </>
-                ) : null}
-                {typeof meta.latencyMs === "number" ? <> · {meta.latencyMs}ms</> : null}
+        {/* ✅ Variables editables (si backend las manda) */}
+        {hasVariables ? (
+          <div className="rounded-2xl border border-neutral-800 bg-neutral-950/40 p-4 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-neutral-100">
+                  Variables editables
+                </div>
+                <div className="mt-1 text-xs text-neutral-500">
+                  Edita lo importante y luego da click en{" "}
+                  <b>Aplicar variables</b>.
+                </div>
+                <button
+                  type="button"
+                  onClick={onCopy}
+                  className={[
+                    "rounded-xl border px-4 py-2 text-sm font-semibold transition",
+                    copied
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
+                      : "border-neutral-800 bg-neutral-950 text-neutral-200 hover:bg-neutral-900",
+                  ].join(" ")}
+                >
+                  {copied ? "Copiado ✅" : "Copiar"}
+                </button>
               </div>
-            ) : (
-              <div className="mt-1 text-xs text-neutral-600">Aquí aparecerá el prompt optimizado.</div>
-            )}
+
+              {hasVariables && missingVarsInfo.missing.length > 0 ? (
+                <div className="inline-flex items-center gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+                  <AlertTriangle className="h-4 w-4" />
+                  Faltan: {missingVarsInfo.missing.join(", ")}
+                </div>
+              ) : null}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Object.entries(variables).map(([key, value]) => (
+                <div key={key} className="space-y-1">
+                  <label className="text-xs font-semibold text-neutral-300">
+                    {key}
+                  </label>
+                  <input
+                    value={safeString(value)}
+                    onChange={(e) =>
+                      setVariables((prev) => ({
+                        ...prev,
+                        [key]: e.target.value,
+                      }))
+                    }
+                    className="w-full rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-700"
+                    placeholder={`Escribe ${key.toLowerCase()}...`}
+                  />
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={applyVariables}
+                disabled={!template || pending}
+                className={[
+                  "rounded-xl px-4 py-2 text-sm font-semibold transition",
+                  !template || pending
+                    ? "bg-neutral-800 text-neutral-400 cursor-not-allowed"
+                    : "bg-fuchsia-500 text-neutral-950 hover:opacity-90",
+                ].join(" ")}
+              >
+                Aplicar variables
+              </button>
+
+              <div className="text-xs text-neutral-500">
+                {applied ? "Aplicadas ✅" : "Aún no aplicadas"}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Output */}
+        <div className="rounded-xl bg-neutral-950 border border-neutral-800 p-4 space-y-3">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-neutral-100">
+                Optimizado
+              </div>
+
+              {meta ? (
+                <div className="mt-1 text-xs text-neutral-500">
+                  engine:{" "}
+                  <span className="text-neutral-300">{meta.engine}</span>
+                  {meta.model ? (
+                    <>
+                      {" "}
+                      · model:{" "}
+                      <span className="text-neutral-300">{meta.model}</span>
+                    </>
+                  ) : null}
+                  {typeof meta.latencyMs === "number" ? (
+                    <> · {meta.latencyMs}ms</>
+                  ) : null}
+                  {hasVariables ? (
+                    <>
+                      {" "}
+                      · vista:{" "}
+                      <span className="text-neutral-300">
+                        {applied ? "final" : "template"}
+                      </span>
+                    </>
+                  ) : null}
+                </div>
+              ) : (
+                <div className="mt-1 text-xs text-neutral-600">
+                  Aquí aparecerá el prompt optimizado.
+                </div>
+              )}
+            </div>
+
+            {/* Toggle simple */}
+            {hasVariables && template ? (
+              <button
+                type="button"
+                onClick={() => setApplied((v) => !v)}
+                disabled={pending}
+                className={[
+                  "rounded-xl border px-3 py-2 text-xs font-semibold transition",
+                  pending
+                    ? "border-neutral-800 bg-neutral-900 text-neutral-500 cursor-not-allowed"
+                    : "border-neutral-800 bg-neutral-950 text-neutral-200 hover:bg-neutral-900",
+                ].join(" ")}
+                title="Alterna entre template (con {{VAR}}) y final (aplicado)"
+              >
+                Ver: {applied ? "Final" : "Template"}
+              </button>
+            ) : null}
           </div>
 
-          <pre className="text-sm text-neutral-200 whitespace-pre-wrap">{optimized || "—"}</pre>
+          {/* Mejor que <pre> para copiar/pegar + long prompts */}
+          <textarea
+            value={displayOutput || "—"}
+            readOnly
+            className="w-full h-64 rounded-xl bg-neutral-950 border border-neutral-800 px-4 py-3 text-sm text-neutral-200 outline-none"
+          />
         </div>
       </div>
     </div>
