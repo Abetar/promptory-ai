@@ -14,16 +14,16 @@ export default function LandingPage() {
 
   const faq = [
     {
-      q: "¿Esto genera el contenido dentro de Promptory?",
-      a: "No. Promptory te entrega prompts listos para ejecutar en tu IA favorita (ChatGPT, Claude, Gemini, etc.). El valor es que llegas a un output usable más rápido.",
+      q: "¿Esto escribe por mí o solo corrige?",
+      a: "Hace ambas: mejora lo que ya tienes y también puede reescribirlo si está muy crudo. El objetivo es que salga claro, profesional y listo para enviar.",
     },
     {
-      q: "¿Sirve aunque ya sepa escribir prompts?",
-      a: "Sí, porque estandariza estructura (objetivo, inputs, restricciones y salida) para mejorar consistencia y reutilización. Menos “depende del día”.",
+      q: "¿Tengo que saber prompts?",
+      a: "No. Pegas tu texto y listo. Promptory se encarga de estructura, tono y claridad sin que tengas que pensar en prompts.",
     },
     {
-      q: "¿Qué compro cuando compro un Pack?",
-      a: "Un flujo completo (no prompts sueltos): prompts + variables + pasos para llegar a un resultado específico. Diseñado para repetirlo cuando lo necesites.",
+      q: "¿Sirve para trabajo y para contenido?",
+      a: "Sí. El foco es texto útil (mensajes, correos, respuestas, documentos) y también puedes adaptarlo para posts o contenido cuando lo necesites.",
     },
   ];
 
@@ -35,7 +35,7 @@ export default function LandingPage() {
     operatingSystem: "Web",
     url: siteUrl,
     description:
-      "Promptory AI: optimiza prompts para obtener resultados claros en menos intentos. Guarda prompts que funcionan y usa packs (workflows) para resultados específicos.",
+      "Promptory AI mejora y profesionaliza tu texto en segundos. Pega un mensaje, correo o post y obtén una versión clara, consistente y lista para enviar.",
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "MXN",
@@ -90,9 +90,9 @@ export default function LandingPage() {
 
       <style>{`
         @media (prefers-reduced-motion: reduce) {
-          [data-reveal], .hero-fade, .glow-pulse { 
-            animation: none !important; 
-            transition: none !important; 
+          [data-reveal], .hero-fade, .glow-pulse {
+            animation: none !important;
+            transition: none !important;
           }
         }
 
@@ -164,21 +164,22 @@ export default function LandingPage() {
             <div>
               <div className="hero-fade d1 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs text-white/70">
                 <span className="h-1.5 w-1.5 rounded-full bg-white/60" />
-                Optimiza → copia → ejecuta (sin vueltas)
+                Pega → mejora → envía (sin pensar demasiado)
               </div>
 
               <h1 className="hero-fade d2 mt-5 text-4xl md:text-5xl font-semibold tracking-tight leading-tight">
-                Menos intentos.
+                Arregla y profesionaliza tu texto.
                 <br />
-                <span className="text-white/70">Más output usable.</span>
+                <span className="text-white/70">En segundos.</span>
               </h1>
 
               <p className="hero-fade d3 mt-4 text-white/70 max-w-xl">
-                Promptory convierte prompts “medio vagos” en instrucciones ejecutables con{" "}
+                Promptory toma tu texto tal cual (correo, mensaje, respuesta, post) y lo
+                convierte en una versión{" "}
                 <span className="text-white/85 font-medium">
-                  estructura, restricciones y formato de salida
+                  clara, profesional y lista para enviar
                 </span>
-                .
+                . Sin pensar en prompts.
               </p>
 
               <div className="hero-fade d4 mt-6 flex flex-col sm:flex-row gap-3">
@@ -186,33 +187,33 @@ export default function LandingPage() {
                   href="/login"
                   className="lift rounded-2xl bg-white text-black px-6 py-3 font-semibold hover:bg-white/90 transition text-center"
                 >
-                  Optimizar un prompt gratis
+                  Mejorar texto gratis
                 </Link>
                 <a
                   href="#demo"
                   className="lift rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-white/85 hover:bg-white/10 transition text-center"
                 >
-                  Ver demo real
+                  Ver antes vs después
                 </a>
               </div>
 
               <div className="hero-fade d5 mt-6 flex flex-wrap gap-2">
                 <TrustPill>Sin instalar nada</TrustPill>
                 <TrustPill>Google login</TrustPill>
-                <TrustPill>Guarda prompts que funcionan</TrustPill>
-                <TrustPill>Packs para resultados específicos</TrustPill>
+                <TrustPill>Historial de versiones</TrustPill>
+                <TrustPill>Reutiliza tu estilo</TrustPill>
               </div>
 
               {/* Micro proof */}
               <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="lift hero-fade d5">
-                  <MiniKpi title="Menos iteraciones" desc="Define salida desde el inicio" />
+                  <MiniKpi title="Mejor primera impresión" desc="Texto pulido y claro" />
                 </div>
                 <div className="lift hero-fade d5" style={{ animationDelay: ".38s" }}>
-                  <MiniKpi title="Más consistencia" desc="Estructura repetible" />
+                  <MiniKpi title="Ahorra tiempo mental" desc="No empieces desde cero" />
                 </div>
                 <div className="lift hero-fade d5" style={{ animationDelay: ".44s" }}>
-                  <MiniKpi title="Reutilización" desc="Prompt Base + Packs" />
+                  <MiniKpi title="Consistencia" desc="Mantén tono y estructura" />
                 </div>
               </div>
             </div>
@@ -222,30 +223,31 @@ export default function LandingPage() {
               <div className="rounded-3xl border border-white/10 bg-white/5 backdrop-blur p-6 lift">
                 <div className="flex items-center justify-between">
                   <span className="text-xs rounded-full border border-white/15 bg-white/5 px-2 py-1 text-white/70">
-                    Prompt Optimizer
+                    Mejorar texto
                   </span>
-                  <span className="text-xs text-white/50">Copia y úsalo donde quieras</span>
+                  <span className="text-xs text-white/50">Listo para copiar y enviar</span>
                 </div>
 
                 <h2 className="mt-4 text-lg font-semibold">
-                  Demo rápido: “Antes” vs “Después”
+                  Demo rápido: texto torpe → texto profesional
                 </h2>
                 <p className="mt-2 text-sm text-white/70">
-                  Esto es lo que cambia: de “suena bien” a “se puede ejecutar”.
+                  De “se entiende, pero no se ve bien” a “listo para enviar”.
                 </p>
 
                 <div className="mt-5 grid gap-3">
                   <DemoBlock
                     label="Antes"
-                    text="Hazme un post para LinkedIn sobre mi servicio. Que se vea profesional y que venda."
+                    text="Hola, te escribo para saber si ya quedó lo mío porque no me han contestado y lo necesito para hoy. Me pueden ayudar por favor?"
                   />
                   <DemoBlock
-                    label="Después (prompt listo)"
-                    text={`Rol: Copywriter B2B
-Objetivo: Crear 3 posts (Directo / Story / Objeciones) para {AUDIENCIA} sobre {SERVICIO}
-Inputs: {CONTEXTO}, {BENEFICIO}, {PRUEBA_SOCIAL}, {OBJECION_PRINCIPAL}
-Restricciones: 120–160 palabras, sin jerga, 1 CTA claro, 1 idea por post
-Formato: Tabla con columnas: Variante | Hook | Cuerpo | CTA`}
+                    label="Después (versión profesional)"
+                    text={`Hola, buen día.
+
+Quisiera dar seguimiento al tema que comentamos, ya que aún no he recibido confirmación.
+¿Me podrían indicar el estatus y el siguiente paso para resolverlo hoy?
+
+Gracias.`}
                   />
                 </div>
 
@@ -254,13 +256,13 @@ Formato: Tabla con columnas: Variante | Hook | Cuerpo | CTA`}
                     href="/login"
                     className="lift inline-flex justify-center rounded-2xl bg-white text-black px-5 py-2.5 text-sm font-semibold hover:bg-white/90 transition"
                   >
-                    Probar ahora
+                    Probar con mi texto
                   </Link>
                   <a
-                    href="#packs"
+                    href="#pricing"
                     className="lift inline-flex justify-center rounded-2xl border border-white/15 bg-white/5 px-5 py-2.5 text-sm text-white/85 hover:bg-white/10 transition"
                   >
-                    Ver Packs
+                    Ver planes
                   </a>
                 </div>
               </div>
@@ -281,52 +283,61 @@ Formato: Tabla con columnas: Variante | Hook | Cuerpo | CTA`}
             <div className="flex items-end justify-between gap-6 flex-wrap">
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight">
-                  Casos reales (para gente que ya usa IA)
+                  Casos reales: lo que escribes cada semana
                 </h2>
                 <p className="mt-2 text-white/70 max-w-2xl">
-                  El Optimizer estandariza tu prompt para que el modelo entregue algo accionable.
+                  Pega un texto normal y recibe una versión clara, profesional y consistente.
                 </p>
               </div>
               <Link
                 href="/login"
                 className="lift rounded-2xl border border-white/15 bg-white/5 px-5 py-2 text-sm text-white/85 hover:bg-white/10 transition"
               >
-                Optimizar el mío
+                Mejorar mi texto
               </Link>
             </div>
 
             <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lift">
                 <CaseCard
-                  title="Contenido"
-                  before="Dame 10 ideas para TikTok de IA."
-                  after={`Rol: Estratega de contenido
-Objetivo: 10 ideas con gancho + b-roll + CTA
-Inputs: {Nicho}, {Audiencia}, {Nivel}, {Meta}
-Restricciones: 20–30s, 1 promesa por video
-Formato: Tabla: Título | Hook | B-roll | CTA`}
+                  title="Mensajes"
+                  before="Hola, te escribo porque sigo esperando respuesta y lo necesito hoy. Me ayudas porfa?"
+                  after={`Hola, buen día.
+
+Quisiera dar seguimiento al tema pendiente, ya que aún no he recibido respuesta.
+¿Me podrían confirmar el estatus y el siguiente paso para resolverlo hoy?
+
+Gracias.`}
                 />
               </div>
               <div className="lift" style={{ transitionDelay: "60ms" }}>
                 <CaseCard
                   title="Trabajo"
                   before="Redacta un correo para pedir seguimiento."
-                  after={`Rol: Customer Support Engineer
-Objetivo: Email corto con contexto y siguiente paso
-Inputs: {Caso}, {Bloqueo}, {Acción solicitada}, {Fecha}
-Restricciones: 90–120 palabras, tono profesional
-Formato: Subject + cuerpo + bullets de next steps`}
+                  after={`Subject: Seguimiento — [Tema / Caso]
+
+Hola [Nombre], buen día.
+
+Solo para dar seguimiento a [tema]. ¿Me podrías confirmar el estatus y el siguiente paso?
+Si te sirve, puedo [propuesta breve].
+
+Gracias,
+[Tu nombre]`}
                 />
               </div>
               <div className="lift" style={{ transitionDelay: "120ms" }}>
                 <CaseCard
-                  title="Dev"
-                  before="Explícame este error y cómo arreglarlo."
-                  after={`Rol: Senior Engineer
-Objetivo: Diagnóstico + pasos concretos
-Inputs: {Stack}, {Error}, {Logs}, {Contexto}
-Restricciones: 3 hipótesis, 1 plan de prueba por hipótesis
-Formato: 1) causa probable 2) pasos 3) verificación`}
+                  title="Contenido"
+                  before="Hazme un post para LinkedIn sobre mi servicio. Que se vea profesional y que venda."
+                  after={`Escribe un post corto y profesional para LinkedIn sobre {SERVICIO}.
+
+Incluye:
+1) Hook (1 línea) con beneficio claro para {AUDIENCIA}
+2) 3 bullets con valor práctico (sin jerga)
+3) 1 prueba social o ejemplo breve (opcional)
+4) 1 CTA simple (comentar / DM / link)
+
+Restricciones: 120–160 palabras, 1 idea central, tono humano y directo.`}
                 />
               </div>
             </div>
@@ -340,95 +351,95 @@ Formato: 1) causa probable 2) pasos 3) verificación`}
           <div data-reveal className="rounded-3xl border border-white/10 bg-white/5 p-6 md:p-8">
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6">
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Así se usa</h2>
+                <h2 className="text-2xl font-semibold tracking-tight">Así de simple funciona</h2>
                 <p className="mt-2 text-white/70 max-w-2xl">
-                  No te enseña teoría. Te da un prompt mejor para ejecutar ya.
+                  No es un curso. Es un botón para dejar tu texto listo.
                 </p>
               </div>
               <Link
                 href="/login"
                 className="lift rounded-2xl bg-white text-black px-6 py-3 font-semibold hover:bg-white/90 transition text-center"
               >
-                Optimizar ahora
+                Mejorar texto ahora
               </Link>
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="lift">
-                <StepCard title="1) Pega tu prompt" desc="Tal cual lo escribiste. Sin pena." />
+                <StepCard title="1) Pega tu texto" desc="Tal cual lo escribiste. Sin pena." />
               </div>
               <div className="lift" style={{ transitionDelay: "60ms" }}>
-                <StepCard title="2) Optimiza" desc="Estructura + restricciones + salida." />
+                <StepCard title="2) Mejorar texto" desc="Lo convierte en una versión profesional." />
               </div>
               <div className="lift" style={{ transitionDelay: "120ms" }}>
-                <StepCard title="3) Copia y guarda" desc="Úsalo donde quieras y reutilízalo." />
+                <StepCard title="3) Copia y guarda" desc="Reutilízalo y mantén consistencia." />
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* PACKS */}
+      {/* PACKS (kept for structure, reframed as examples) */}
       <section id="packs" className="scroll-mt-24 relative z-10">
         <div className="mx-auto max-w-6xl px-6 pb-14">
           <div data-reveal>
             <div className="flex items-end justify-between gap-6 flex-wrap">
               <div>
-                <h2 className="text-2xl font-semibold tracking-tight">Packs que sí se compran</h2>
+                <h2 className="text-2xl font-semibold tracking-tight">Plantillas y ejemplos (opcional)</h2>
                 <p className="mt-2 text-white/70 max-w-2xl">
-                  No “prompts sueltos”. Son flujos repetibles para un resultado específico.
+                  Si quieres, usa ejemplos listos por objetivo. Pero lo principal es mejorar tu texto.
                 </p>
               </div>
               <Link
                 href="/login"
                 className="lift rounded-2xl border border-white/15 bg-white/5 px-5 py-2 text-sm text-white/85 hover:bg-white/10 transition"
               >
-                Ver packs en dashboard
+                Ver ejemplos en dashboard
               </Link>
             </div>
 
             <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="lift">
                 <PackCardV2
-                  title="Contenido semanal"
-                  price="Desde $50 MXN"
+                  title="Respuestas y emails"
+                  price="Gratis + premium"
                   bullets={[
-                    "Ideas → guión → b-roll → CTA",
-                    "Variantes por plataforma",
-                    "Plantillas reutilizables",
+                    "Seguimientos cortos con contexto",
+                    "Tono profesional y claro",
+                    "Estructuras reutilizables",
                   ]}
-                  badge="Premium"
+                  badge="Mixto"
                 />
               </div>
               <div className="lift" style={{ transitionDelay: "60ms" }}>
                 <PackCardV2
-                  title="Ventas y anuncios"
+                  title="Ventas y WhatsApp"
                   price="Desde $50 MXN"
                   bullets={[
-                    "Copy para ads y landing",
+                    "Mensajes con CTA claro",
                     "Objeciones + pruebas",
-                    "Mensajes para WhatsApp",
+                    "Tono humano (no robot)",
                   ]}
                   badge="Premium"
                 />
               </div>
               <div className="lift" style={{ transitionDelay: "120ms" }}>
                 <PackCardV2
-                  title="Trabajo (emails / docs)"
-                  price="Gratis + premium"
+                  title="Contenido semanal"
+                  price="Desde $50 MXN"
                   bullets={[
-                    "Emails cortos con contexto",
-                    "Minutas y resúmenes",
-                    "Formatos consistentes",
+                    "Ideas → borrador → versión final",
+                    "Variantes por plataforma",
+                    "Plantillas reutilizables",
                   ]}
-                  badge="Mixto"
+                  badge="Premium"
                 />
               </div>
             </div>
 
             <div className="mt-6 rounded-2xl border border-white/10 bg-black/40 p-4 text-sm text-white/70 lift">
               <p className="text-xs text-white/50 mb-1">Regla simple</p>
-              Packs te dan dirección. El Optimizer te da calidad.
+              Ejemplos te dan dirección. “Mejorar texto” te da calidad.
             </div>
           </div>
         </div>
@@ -442,7 +453,7 @@ Formato: 1) causa probable 2) pasos 3) verificación`}
               <div>
                 <h2 className="text-2xl font-semibold tracking-tight">Planes</h2>
                 <p className="mt-2 text-white/70 max-w-2xl">
-                  Empieza gratis. Paga cuando lo uses seguido y quieras consistencia.
+                  Empieza gratis. Si lo usas cada semana, Pro se paga solo con el tiempo que te ahorra.
                 </p>
               </div>
               <Link
@@ -458,11 +469,11 @@ Formato: 1) causa probable 2) pasos 3) verificación`}
                 <PriceCard
                   name="Free"
                   price="$0"
-                  tagline="Para probar el método"
+                  tagline="Para probar el flujo"
                   items={[
-                    "Optimización básica diaria",
-                    "Acceso a contenido gratuito",
-                    "Guardar prompts (base)",
+                    "Mejora de texto básica diaria",
+                    "Acceso a ejemplos gratuitos",
+                    "Guardar versiones (base)",
                   ]}
                   cta="Probar gratis"
                 />
@@ -472,10 +483,10 @@ Formato: 1) causa probable 2) pasos 3) verificación`}
                   name="Pro"
                   price="$99 MXN/mes"
                   highlight
-                  tagline="Si usas IA cada semana"
+                  tagline="Si escribes cada semana"
                   items={[
-                    "Optimización avanzada (más consistente)",
-                    "Mejor output para trabajo real",
+                    "Mejora avanzada (más consistente)",
+                    "Mejor salida para trabajo real",
                     "Prioridad para features nuevas",
                   ]}
                   cta="Ir a Pro"
@@ -483,17 +494,21 @@ Formato: 1) causa probable 2) pasos 3) verificación`}
               </div>
               <div className="lift" style={{ transitionDelay: "120ms" }}>
                 <PriceCard
-                  name="Packs"
+                  name="Ejemplos"
                   price="Desde $50 MXN"
                   tagline="Compra puntual (sin suscripción)"
-                  items={["Workflows listos por resultado", "Reutilizables", "No expiran"]}
-                  cta="Ver packs"
+                  items={[
+                    "Plantillas listas por objetivo",
+                    "Reutilizables",
+                    "No expiran",
+                  ]}
+                  cta="Ver ejemplos"
                 />
               </div>
             </div>
 
             <p className="mt-4 text-xs text-white/50">
-              Nota: Promptory no reemplaza tu IA. Te da mejores instrucciones para que tu IA entregue mejores salidas.
+              Nota: Promptory no reemplaza tu IA. La vuelve más útil porque tu texto entra mejor y sale listo.
             </p>
           </div>
         </div>
@@ -523,13 +538,13 @@ Formato: 1) causa probable 2) pasos 3) verificación`}
                 href="/login"
                 className="lift inline-flex justify-center rounded-2xl bg-white text-black px-6 py-3 font-semibold hover:bg-white/90 transition"
               >
-                Optimizar un prompt gratis
+                Mejorar texto gratis
               </Link>
               <a
-                href="#packs"
+                href="#pricing"
                 className="lift inline-flex justify-center rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-white/85 hover:bg-white/10 transition"
               >
-                Ver packs
+                Ver planes
               </a>
             </div>
           </div>
@@ -569,9 +584,9 @@ Formato: 1) causa probable 2) pasos 3) verificación`}
         <div className="mx-auto max-w-6xl">
           <div className="lift rounded-2xl border border-white/10 bg-black/70 backdrop-blur px-4 py-2 sm:py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3">
             <div className="text-sm text-white/80">
-              Optimiza 1 prompt y ejecútalo.
+              Mejora 1 texto y envíalo con confianza.
               <span className="ml-2 text-white/60 text-xs hidden sm:inline">
-                Menos intentos, más output usable.
+                Menos vueltas, mejor primera impresión.
               </span>
             </div>
             <div className="flex gap-2">
@@ -579,13 +594,13 @@ Formato: 1) causa probable 2) pasos 3) verificación`}
                 href="#demo"
                 className="lift inline-flex items-center justify-center rounded-xl border border-white/15 bg-white/5 px-4 py-2 text-sm text-white/85 hover:bg-white/10 transition"
               >
-                Ver demo
+                Ver antes vs después
               </a>
               <Link
                 href="/login"
                 className="lift inline-flex items-center justify-center rounded-xl bg-white text-black px-4 py-2 text-sm font-semibold hover:bg-white/90 transition"
               >
-                Optimizar gratis
+                Mejorar gratis
               </Link>
             </div>
           </div>
@@ -701,7 +716,7 @@ function PackCardV2({
         href="/login"
         className="mt-5 inline-flex w-full items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold transition border border-white/15 bg-white/5 text-white/85 hover:bg-white/10"
       >
-        Ver packs
+        Ver ejemplos
       </Link>
     </div>
   );

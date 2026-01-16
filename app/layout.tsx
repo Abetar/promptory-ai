@@ -21,18 +21,18 @@ const ogImage = "/og.png";
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
-  // ✅ Core message: resultado > catálogo
+  // ✅ Core message: mejorar texto (resultado > prompts)
   title: {
-    default: "Promptory AI — Resultados claros desde el primer intento",
+    default: "Promptory AI — Arregla y profesionaliza tu texto en segundos",
     template: "%s | Promptory AI",
   },
 
-  // ✅ Menos “repositorio/packs”, más outcome
+  // ✅ Outcome-first: texto listo para enviar
   description:
-    "Deja de iterar con la IA. Promptory convierte prompts vagos en instrucciones ejecutables (objetivo, inputs, restricciones y formato) para obtener salida utilizable más rápido.",
+    "Pega un mensaje, correo o post y obtén una versión clara, profesional y lista para enviar. Menos vueltas. Mejor primera impresión.",
 
   applicationName: siteName,
-  category: "technology",
+  category: "productivity",
   alternates: { canonical: "/" },
 
   robots: {
@@ -50,9 +50,9 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: siteUrl,
-    title: "Promptory AI — Resultados claros desde el primer intento",
+    title: "Promptory AI — Arregla y profesionaliza tu texto en segundos",
     description:
-      "Convierte prompts vagos en instrucciones ejecutables para dejar el ensayo-error y obtener salida utilizable más rápido.",
+      "Mejora textos de trabajo y contenido sin pensar en prompts. Pega tu texto y recibe una versión clara, profesional y lista para enviar.",
     siteName,
     locale: "es_MX",
     images: [{ url: ogImage, width: 1200, height: 630, alt: "Promptory AI" }],
@@ -60,9 +60,9 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "Promptory AI — Resultados claros desde el primer intento",
+    title: "Promptory AI — Arregla y profesionaliza tu texto en segundos",
     description:
-      "Menos respuestas genéricas. Más salida utilizable. Optimiza prompts con objetivo, inputs, restricciones y formato.",
+      "Pega tu texto y obtén una versión clara, profesional y lista para enviar. Menos vueltas. Mejor primera impresión.",
     images: [ogImage],
   },
 

@@ -17,7 +17,7 @@ export default async function PromptOptimizerPage() {
       <div className="mx-auto w-full max-w-3xl px-4 py-10 space-y-6">
         <div>
           <div className="inline-flex items-center rounded-full border border-neutral-800 bg-neutral-900/40 px-3 py-1 text-xs text-neutral-300">
-            Prompt Optimizer
+            Mejorar texto
           </div>
           <h1 className="mt-3 text-2xl font-semibold tracking-tight">
             Inicia sesión para usar la herramienta
@@ -53,7 +53,6 @@ export default async function PromptOptimizerPage() {
   const isPro = tier !== "none";
 
   // ✅ Traer Prompt Base (si existe)
-  // Asume: model UserPromptBase { userId @unique, content String, updatedAt DateTime @updatedAt }
   const promptBase = userId
     ? await prisma.userPromptBase.findUnique({
         where: { userId },
@@ -94,22 +93,23 @@ export default async function PromptOptimizerPage() {
           </div>
 
           <h1 className="mt-3 text-2xl font-semibold tracking-tight">
-            Prompt Optimizer
+            Mejorar texto
           </h1>
           <p className="mt-2 text-sm text-neutral-400">
-            Pega tu prompt → recibe una versión mejor.
+            Pega un mensaje, correo o post → recibe una versión clara y
+            profesional.
           </p>
 
-          {/* ✅ micro-info si ya tiene Prompt Base */}
+          {/* ✅ micro-info si ya tiene “estilo” guardado (antes Prompt Base) */}
           {promptBase?.updatedAt ? (
             <p className="mt-2 text-xs text-neutral-500">
-              Prompt Base cargado (última edición:{" "}
+              Estilo guardado (última edición:{" "}
               {new Date(promptBase.updatedAt).toLocaleString()}
               ).
             </p>
           ) : (
             <p className="mt-2 text-xs text-neutral-500">
-              Tip: crea tu Prompt Base para ahorrar tiempo cada vez.
+              Tip: guarda tu estilo (opcional) para que el resultado suene más a ti.
             </p>
           )}
         </div>
@@ -132,7 +132,7 @@ export default async function PromptOptimizerPage() {
         ) : null}
       </div>
 
-      {/* ✅ Pasamos Prompt Base para precargar el textarea */}
+      {/* ✅ Pasamos “estilo” para precargar el textarea (misma variable, no rompo nada) */}
       <PromptOptimizerClient initialInput={initialInput} isPro={isPro} tier={tier} />
     </div>
   );
